@@ -1,6 +1,7 @@
-#pragma once
+#ifndef AUTONOMY_UTILS_INCLUDE_LIBS_ROS2_PARAMS_H_
+#define AUTONOMY_UTILS_INCLUDE_LIBS_ROS2_PARAMS_H_
 
-#include <autonomy_utils/lib/ros2_nodes.hpp>
+#include <autonomy_utils/lib/ros2_nodes.h>
 
 namespace ros2
 {
@@ -75,3 +76,5 @@ namespace ros2
 	}
 
 }
+
+#endif /*AUTONOMY_UTILS_INCLUDE_LIBS_ROS2_PARAMS_H_*/

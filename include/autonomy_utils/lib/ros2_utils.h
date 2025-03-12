@@ -1,7 +1,7 @@
-#ifndef ROS2_SANDBAG_INCLUDE_LIBS_ROS2_UTILS_H_
-#define ROS2_SANDBAG_INCLUDE_LIBS_ROS2_UTILS_H_
+#ifndef AUTONOMY_UTILS_INCLUDE_LIBS_ROS2_UTILS_H_
+#define AUTONOMY_UTILS_INCLUDE_LIBS_ROS2_UTILS_H_
 
-#include <autonomy_utils/lib/ros2_nodes.hpp>
+#include <autonomy_utils/lib/ros2_nodes.h>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <sensor_msgs/msg/imu.hpp>
@@ -52,4 +52,4 @@ namespace ros2
 
 }
 
-#endif /*ROS2_SANDBAG_INCLUDE_LIBS_ROS2_UTILS_H_*/
+#endif /*AUTONOMY_UTILS_INCLUDE_LIBS_ROS2_UTILS_H_*/

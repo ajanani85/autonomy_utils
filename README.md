@@ -1,7 +1,7 @@
-# ros2_sandbag
+# autonomy_utils
 
 ## Overview
-`ros2_sandbag` is a ROS 2 package that provides template solutions for your problems.
+`autonomy_utils` is a ROS2 utility library.
 
 ## Installation 
 Simply, clone this package into your ros2 workspace and build
@@ -29,15 +29,15 @@ Install the following packages:
 ```bash
 sudo apt install doxygen graphviz xdg-utils
 
-colcon build --packages-select ros2_sandbag --cmake-target doc
+colcon build --packages-select autonomy_utils --cmake-target doc
 ```
 
 Pay attention to Doxyfile.in and CMakeList.txt. Specifically, pay attention to how the INPUT is defined inside the Doxyfile.in
 
-The colcon build creates your docs in ~/ros2_ws/build/ros2_sandbag/docs/html. To inspect your files: 
+The colcon build creates your docs in ~/ros2_ws/build/autonomy_utils/docs/html. To inspect your files: 
 
 ```bash
-cd ~/ros2_ws/build/ros2_sandbag/docs/html
+cd ~/ros2_ws/build/autonomy_utils/docs/html
 
 python3 -m http.server 8080
 
@@ -56,13 +56,13 @@ http://localhost:8080/index.html
 2. To build with for testing: first, build it normally:
 
 ```bash
-colcon build --packages-select ros2_sandbag
+colcon build --packages-select autonomy_utils
 ```
 
 3. run the test and view the results:
 
 ```bash
-colcon test --packages-select ros2_sandbag --event-handlers console_cohesion+
+colcon test --packages-select autonomy_utils --event-handlers console_cohesion+
 ```
 
 ## Using the Scripts

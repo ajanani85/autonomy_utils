@@ -1,4 +1,6 @@
-#pragma once
+#ifndef AUTONOMY_UTILS_INCLUDE_LIBS_ROS2_NODES_H_
+#define AUTONOMY_UTILS_INCLUDE_LIBS_ROS2_NODES_H_
+
 
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -110,3 +112,6 @@ inline rclcpp::Clock::SharedPtr getClock() { return ros2::Node::node->get_clock(
 #define ROS_DEBUG_STREAM(...) RCLCPP_DEBUG_STREAM(ros2::Node::node->get_logger(), __VA_ARGS__)
 #define ROS_DEBUG_THROTTLE(duration, ...) RCLCPP_DEBUG_THROTTLE(ros2::Node::node->get_logger(), *ros2::Node::node->get_clock(), (long)((duration) * 1000.0), __VA_ARGS__)
 #define ROS_DEBUG_STREAM_THROTTLE(duration, ...) RCLCPP_DEBUG_STREAM_THROTTLE(ros2::Node::node->get_logger(), *ros2::Node::node->get_clock(), (long)((duration) * 1000.0), __VA_ARGS__)
+
+
+#endif /*AUTONOMY_UTILS_INCLUDE_LIBS_ROS2_NODES_H_*/
