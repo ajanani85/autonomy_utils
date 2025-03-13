@@ -433,12 +433,12 @@
    }
    tf2::Quaternion Rotate::toQuaternion(const std::array<double,3> rpy)
    {
-       return am::Rotate::toQuaternion((double)rpy[0], (double)rpy[1], (double)rpy[2]);
+       return ros2::Rotate::toQuaternion((double)rpy[0], (double)rpy[1], (double)rpy[2]);
    }
  
    geometry_msgs::msg::Quaternion Rotate::toQuaternionMsg(const std::array<double,3> rpy)
    {
-       return am::Rotate::toQuaternionMsg((double)rpy[0], (double)rpy[1], (double)rpy[2]);
+       return ros2::Rotate::toQuaternionMsg((double)rpy[0], (double)rpy[1], (double)rpy[2]);
  
    }
  

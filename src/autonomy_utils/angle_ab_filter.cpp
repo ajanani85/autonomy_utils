@@ -20,7 +20,7 @@ AngleAlphaBetaFilter::~AngleAlphaBetaFilter()
 
 void AngleAlphaBetaFilter::initialize(const geometry_msgs::msg::Quaternion &q)
 {
-	am::Rotate::getRPY(q, init_roll_, init_pitch_, init_yaw_);
+	ros2::Rotate::getRPY(q, init_roll_, init_pitch_, init_yaw_);
 }
 
 void AngleAlphaBetaFilter::initialize(double r, double p, double y)
@@ -36,19 +36,19 @@ bool AngleAlphaBetaFilter::filter(geometry_msgs::msg::Quaternion &q)
 
 	double yaw = 0.0, roll = 0.0, pitch = 0.0;
 
-	am::Rotate::getRPY(q, roll, pitch, yaw);
+	ros2::Rotate::getRPY(q, roll, pitch, yaw);
 
 	double new_yaw;
 	bool result = updateIfOk(yaw, new_yaw);
 
-	q = am::Rotate::toQuaternionMsg(roll, pitch, new_yaw);
+	q = ros2::Rotate::toQuaternionMsg(roll, pitch, new_yaw);
 
 	return result;
 }
 
 bool AngleAlphaBetaFilter::updateIfOk(double new_angle, double &filtered_angle)
 {
-        double na = AM::wrap_pi(new_angle);
+        double na = ros2::wrap_pi(new_angle);
 	if(!data_is_set_)
 	{
 		data_is_set_ = true;
@@ -57,15 +57,15 @@ bool AngleAlphaBetaFilter::updateIfOk(double new_angle, double &filtered_angle)
 		return false;
 	}
 
-	double angle_diff = am::Angles::getDiffSigned(old_angle_, new_angle);
-	filtered_angle = AM::wrap_pi(old_angle_ + angle_diff * weight_);
+	double angle_diff = ros2::Angles::getDiffSigned(old_angle_, new_angle);
+	filtered_angle = ros2::wrap_pi(old_angle_ + angle_diff * weight_);
         old_angle_ = filtered_angle;
 	return true;
 }
 
 double AngleAlphaBetaFilter::filter(double new_angle)
 {
-	double na = AM::wrap_pi(new_angle);
+	double na = ros2::wrap_pi(new_angle);
 	if(!data_is_set_)
 	{
 		data_is_set_ = true;
@@ -73,8 +73,8 @@ double AngleAlphaBetaFilter::filter(double new_angle)
 		return old_angle_;
 	}
 
-        double angle_diff = am::Angles::getDiffSigned(old_angle_, new_angle);
-        double filtered_angle = AM::wrap_pi(old_angle_ + angle_diff * weight_);
+        double angle_diff = ros2::Angles::getDiffSigned(old_angle_, new_angle);
+        double filtered_angle = ros2::wrap_pi(old_angle_ + angle_diff * weight_);
         old_angle_ = filtered_angle;
 	return filtered_angle;
 }

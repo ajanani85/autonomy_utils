@@ -6,7 +6,7 @@ if(NOT CMAKE_C_STANDARD)
   set(CMAKE_C_STANDARD 99)
 endif()
 
-# Default to C++14
+# Default to C++17
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
 endif()
@@ -21,12 +21,24 @@ set(dependencies
         std_srvs
         sensor_msgs
         geometry_msgs
-        rosbag2_storage
-        rosbag2_cpp
 	      nav_msgs
         rclcpp_lifecycle
         example_interfaces
-        
+        Eigen3
+        jsoncpp
+        OpenCV
+        PCL
+        pcl_conversions
+        rosbag2
+        rosbag2_cpp
+        rosbag2_storage
+        sensor_msgs
+        stereo_msgs
+        tf2
+        tf2_geometry_msgs
+        tf2_sensor_msgs
+        tf2_ros
+        visualization_msgs
       )
 
 # find dependencies

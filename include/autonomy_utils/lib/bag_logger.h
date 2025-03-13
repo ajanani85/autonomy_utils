@@ -12,7 +12,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 
-#include <am_utils/am_ros2_utility.h>
+#include <autonomy_utils/lib/ros2_core.h>
 #include <rosbag2_cpp/typesupport_helpers.hpp>
 #include <rosbag2_cpp/writer.hpp>
 #include <rosbag2_cpp/typesupport_helpers.hpp>
@@ -24,7 +24,7 @@
 
 
 //in ros2 you cannot do ros::Time::now(). You have to send the time over
-#define LOG_MSG(topic, msg, level) { LOG_MSG_STAMP(topic, msg, am::ClockNow(), level) }
+#define LOG_MSG(topic, msg, level) { LOG_MSG_STAMP(topic, msg, ros2::ClockNow(), level) }
 
 #define LOG_MSG_STAMP(topic, msg, t, level) { if (BagLogger::instance()->isLogging() && \
                                                  (level) <= BagLogger::instance()->getLogLevel()) { \
