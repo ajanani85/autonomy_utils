@@ -30,8 +30,22 @@ namespace ros2
 			;
 		}
 	}
-	// get parameter for vector of integers
+	/**
+	 * @brief get parameter for vector of integers with initial value
+	 * 
+	 * @param param_name the name of the parameter as string
+	 * @param param the output of the operation
+	 * @param initial_value the initial value
+	 */
 	void getParam(const std::string &param_name, std::vector<int> &param, const std::vector<int> &initial_value);
+	/**
+	 * @brief get parameter for vector of integers with initial value
+	 * 
+	 * @param param_name the name of the parameter as string
+	 * @param param the output of the operation
+	 * @return true if the function can declare the parameter
+	 * @return false if the declaration is unsuccessful
+	 */
 	bool getParam(const std::string &param_name, std::vector<int> &param);
 
 	// get parameter for vector of bytes
