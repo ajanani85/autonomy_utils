@@ -27,6 +27,7 @@ set(dependencies
         Eigen3
         jsoncpp
         OpenCV
+        cv_bridge
         PCL
         pcl_conversions
         rosbag2
@@ -81,7 +82,7 @@ install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/docs
 
 
 file(GLOB utils_lib_files
-src/autonomy_utils/*.cpp
+src/autonomy_utils/lib/*.cpp
 )
 
 add_library(autonomy_utils_lib 
