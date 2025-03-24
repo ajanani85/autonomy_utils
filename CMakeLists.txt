@@ -43,7 +43,6 @@ set(dependencies
       )
 
 # find dependencies
-# find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_gtest REQUIRED)
 
@@ -81,6 +80,7 @@ install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/docs
 ######################################END DOCUMENTATION##################################
 
 
+###################################AUTNOMY_UTILS_LIB#####################################
 file(GLOB utils_lib_files
 src/autonomy_utils/lib/*.cpp
 )
@@ -93,6 +93,14 @@ ament_target_dependencies(autonomy_utils_lib ${dependencies})
 ament_export_targets(autonomy_utils_libTargets HAS_LIBRARY_TARGET)
 ament_export_include_directories(include)
 ament_export_libraries(autonomy_utils_lib)
+
+###################################KEYBOARD_NODE#####################################
+
+add_executable(keyboard_node src/nodes/keyboard_node.cpp)
+target_link_libraries(keyboard_node autonomy_utils_lib)
+ament_target_dependencies(keyboard_node ${dependencies})
+
+
 
 
 install(DIRECTORY include/
@@ -112,6 +120,7 @@ install(
 )
 
 install(TARGETS
+  keyboard_node
   DESTINATION lib/${PROJECT_NAME})
 
 enable_testing()
