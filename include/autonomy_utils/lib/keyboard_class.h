@@ -16,13 +16,19 @@ private:
 
     rclcpp::Publisher<std_msgs::msg::String>::SharedPtr keyboard_pub_;
 
-    rclcpp::TimerBase::SharedPtr check_key_timer_;
+    std::thread key_thread_;
+
+    std::atomic<bool> running_;
 
     void configure();
 
-    void timerCB();
+    void activate();
+
+    void keyLoop();
 
     char getKey();
+
+    
 };
 }
 

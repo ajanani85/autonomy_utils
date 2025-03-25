@@ -10,34 +10,47 @@ KeyboardClass::KeyboardClass()
     {
         throw std::runtime_error("ros2::Node::node is nullptr!"); 
     }
-
+    // ros2::Node::node->register_on_configure_callback(std::bind(&KeyboardClass::configure, this));
+    // ros2::Node::node->register_on_activate_callback(std::bind(&KeyboardClass::activate, this));
     configure();
+    activate();
 }
 
 
 KeyboardClass::~KeyboardClass()
 {
-
+    running_ = false;
+    if (key_thread_.joinable()) {
+        key_thread_.join();
+    }
 }
 
 void KeyboardClass::configure()
 {
+    ROS_INFO("Configuring ...");
+
     keyboard_pub_ = ros2::Node::node->create_publisher<std_msgs::msg::String>("/key_pressed",1);
-
-    check_key_timer_ = ros2::Node::node->create_wall_timer(ros2::toDuration(0.05), std::bind(&KeyboardClass::timerCB, this));
-
+    key_thread_ = std::thread(&KeyboardClass::keyLoop, this);
 }
 
 
-void KeyboardClass::timerCB()
+void KeyboardClass::activate()
 {
+    ROS_INFO("Activating ...");
+}
 
-    char key = getKey();
-    if (key != '\0') 
+
+void KeyboardClass::keyLoop()
+{
+    while (running_) 
     {
+    
+        ROS_INFO("HELOO");
+        char key = getKey();
         std_msgs::msg::String msg;
-        msg.data = getKey();
+        msg.data = key;
         keyboard_pub_->publish(msg);
+        usleep(10000); // Small delay to reduce CPU usage
     }
 
     
@@ -45,7 +58,7 @@ void KeyboardClass::timerCB()
 
 char KeyboardClass::getKey() 
 {
-    static struct termios oldt, newt;
+    struct termios oldt, newt;
     char ch;
     int nread;
 
@@ -55,7 +68,7 @@ char KeyboardClass::getKey()
 
     // Disable canonical mode and echo
     newt.c_lflag &= ~(ICANON | ECHO);
-    newt.c_cc[VMIN] = 1;  // Read at least 1 character at a time
+    newt.c_cc[VMIN] = 0;  // Read at least 1 character at a time
     newt.c_cc[VTIME] = 0; // No timeout, so it waits for input
 
     // Apply new settings
