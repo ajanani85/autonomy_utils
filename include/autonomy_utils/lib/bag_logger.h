@@ -19,8 +19,8 @@
 #include <rosbag2_storage/storage_options.hpp>
 
 
-#define DEFAULT_BAG_DIR "/var/log/amros/"
-#define DEFAULT_MEDIA_DIR "/media/amros"
+#define DEFAULT_BAG_DIR "/var/log/terabase/"
+#define DEFAULT_MEDIA_DIR "/media/terabase"
 
 
 //in ros2 you cannot do ros::Time::now(). You have to send the time over
