@@ -24,7 +24,7 @@
 
 
 //in ros2 you cannot do ros::Time::now(). You have to send the time over
-#define LOG_MSG(topic, msg, level) { LOG_MSG_STAMP(topic, msg, ros2::ClockNow(), level) }
+#define LOG_MSG(topic, msg, level) { LOG_MSG_STAMP(topic, msg, clockNow(), level) }
 
 #define LOG_MSG_STAMP(topic, msg, t, level) { if (BagLogger::instance()->isLogging() && \
                                                  (level) <= BagLogger::instance()->getLogLevel()) { \
