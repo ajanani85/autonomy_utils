@@ -93,15 +93,13 @@ target_link_libraries(autonomy_utils_lib ${Boost_LIBRARIES})
 ament_target_dependencies(autonomy_utils_lib ${dependencies})
 ament_export_targets(autonomy_utils_libTargets HAS_LIBRARY_TARGET)
 ament_export_include_directories(include)
-ament_export_libraries(autonomy_utils_lib)
+ament_export_libraries(autonomy_utils_lib ${Boost_LIBRARIES})
 
 ###################################KEYBOARD_NODE#####################################
 
 add_executable(keyboard_node src/nodes/keyboard_node.cpp)
 target_link_libraries(keyboard_node autonomy_utils_lib)
 ament_target_dependencies(keyboard_node ${dependencies})
-
-
 
 
 install(DIRECTORY include/
