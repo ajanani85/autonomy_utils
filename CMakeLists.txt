@@ -40,12 +40,12 @@ set(dependencies
         tf2_sensor_msgs
         tf2_ros
         visualization_msgs
+        Boost
       )
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_gtest REQUIRED)
-find_package(Boost REQUIRED COMPONENTS filesystem)
 
 foreach(Dependency IN ITEMS ${dependencies})
   find_package(${Dependency} REQUIRED)
