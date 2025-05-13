@@ -1,15 +1,9 @@
 cmake_minimum_required(VERSION 3.5)
 project(autonomy_utils)
 
-# Default to C99
-if(NOT CMAKE_C_STANDARD)
-  set(CMAKE_C_STANDARD 99)
-endif()
-
 # Default to C++17
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 17)
-endif()
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   #add_compile_options(-Wall -Wextra -Wpedantic)
@@ -45,7 +39,6 @@ set(dependencies
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_gtest REQUIRED)
-find_package(Boost REQUIRED EXACT 1.74.0 COMPONENTS filesystem system)
 
 foreach(Dependency IN ITEMS ${dependencies})
   find_package(${Dependency} REQUIRED)
@@ -89,18 +82,16 @@ src/autonomy_utils/lib/*.cpp
 add_library(autonomy_utils_lib 
   ${utils_lib_files}
 )
-target_link_libraries(autonomy_utils_lib Boost::filesystem
-                                         Boost::system)
+target_link_libraries(autonomy_utils_lib)
 ament_target_dependencies(autonomy_utils_lib ${dependencies})
 ament_export_targets(autonomy_utils_libTargets HAS_LIBRARY_TARGET)
 ament_export_include_directories(include)
-ament_export_libraries(autonomy_utils_lib ${Boost_LIBRARIES})
+ament_export_libraries(autonomy_utils_lib)
 
 ###################################KEYBOARD_NODE#####################################
 
 add_executable(keyboard_node src/nodes/keyboard_node.cpp)
-target_link_libraries(keyboard_node autonomy_utils_lib Boost::filesystem
-Boost::system)
+target_link_libraries(keyboard_node autonomy_utils_lib)
 ament_target_dependencies(keyboard_node ${dependencies})
 
 

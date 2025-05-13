@@ -1,42 +1,44 @@
 #include <autonomy_utils/lib/bag_logger.h>
+#include <filesystem>
 
 BagLogger* BagLogger::s_instance_ = 0;
 
 std::string BagLogger::getLogFileDir()
 {
   using namespace std;
-  using namespace boost::filesystem;
+  namespace fs = std::filesystem; // Alias for std::filesystem
 
-  path p(DEFAULT_MEDIA_DIR);
+  fs::path p(DEFAULT_MEDIA_DIR);
   try
   {
-    for (auto i = directory_iterator(p); i != directory_iterator(); i++)
+    for (const auto& entry : fs::directory_iterator(p))
     {
-      if (is_directory(i->path()))
+      if (fs::is_directory(entry))
       {
-        std::size_t found = i->path().filename().string().find("LOG");
+        std::size_t found = entry.path().filename().string().find("LOG");
         if (found != std::string::npos)
         {
-          //                cout << "FOUND: "+i->path().filename().string()+"  AT: "+i->path().string() << endl;
-          return i->path().string() + "/";
+          return entry.path().string() + "/";
         }
       }
-      else
-        continue;
     }
   }
-  catch (const boost::filesystem::filesystem_error& e)
+  catch (const fs::filesystem_error& e)
   {
-    if (e.code() == boost::system::errc::permission_denied)
+    if (e.code() == std::errc::permission_denied)
+    {
       ROS_ERROR_STREAM("Search permission is denied for one of the directories "
                        << "in the path prefix of " << p << "\n");
+    }
     else
+    {
       ROS_ERROR_STREAM("is_directory(" << p << ") failed with " << e.code().message() << '\n');
+    }
   }
 
   ROS_WARN("LG: NO LOG_XXX SD CARD FOUND\n");
 
-  return string(DEFAULT_BAG_DIR);
+  return std::string(DEFAULT_BAG_DIR);
 }
 
 void BagLogger::add_topic(const std::string& topic, const std::string& message_in_str)
@@ -62,44 +64,51 @@ void BagLogger::add_topic(const std::string& topic, const std::string& message_i
 std::string BagLogger::getSequence(std::string dir, std::string prefix)
 {
   using namespace std;
-  using namespace boost::filesystem;
-  using namespace boost;
+  namespace fs = std::filesystem; // Alias for std::filesystem
 
   unsigned int seq_num = 0;
 
-  path p(dir);
+  fs::path p(dir);
   try
   {
-    for (auto i = directory_iterator(p); i != directory_iterator(); i++)
+    for (const auto& entry : fs::directory_iterator(p))
     {
-      if (is_directory(i->path()))  // we eliminate directories
+      if (fs::is_directory(entry)) // Eliminate non-directory entries
       {
-        // cout << i->path().filename().string() << endl;
         std::vector<std::string> fields;
-        boost::split(fields, i->path().filename().string(), boost::is_any_of("-"));
-        if (fields.size() >= 2)
+        std::string filename = entry.path().filename().string();
+
+        // Split the filename by '-' to extract fields
+        size_t pos = 0;
+        while ((pos = filename.find('-')) != std::string::npos)
         {
-          if (fields[0] == prefix)
+          fields.push_back(filename.substr(0, pos));
+          filename.erase(0, pos + 1);
+        }
+        fields.push_back(filename); // Add the last field
+
+        if (fields.size() >= 2 && fields[0] == prefix)
+        {
+          unsigned long tmp = std::stoul(fields[1]);
+          if (tmp < 9999 && tmp > seq_num)
           {
-            unsigned long tmp = atol(fields[1].c_str());
-            if (tmp < 9999 && tmp > seq_num)
-            {
-              seq_num = tmp;
-            }
+            seq_num = tmp;
           }
         }
       }
-      else
-        continue;
     }
   }
-  catch (const boost::filesystem::filesystem_error& e)
+  catch (const fs::filesystem_error& e)
   {
-    if (e.code() == boost::system::errc::permission_denied)
+    if (e.code() == std::errc::permission_denied)
+    {
       ROS_ERROR_STREAM("Search permission is denied for one of the directories "
                        << "in the path prefix of " << p << "\n");
+    }
     else
+    {
       ROS_ERROR_STREAM("is_directory(" << p << ") failed with " << e.code().message() << '\n');
+    }
   }
 
   seq_num++;
