@@ -40,12 +40,12 @@ set(dependencies
         tf2_sensor_msgs
         tf2_ros
         visualization_msgs
-        Boost
       )
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_gtest REQUIRED)
+find_package(Boost REQUIRED EXACT 1.74.0 COMPONENTS filesystem system)
 
 foreach(Dependency IN ITEMS ${dependencies})
   find_package(${Dependency} REQUIRED)
@@ -89,7 +89,8 @@ src/autonomy_utils/lib/*.cpp
 add_library(autonomy_utils_lib 
   ${utils_lib_files}
 )
-target_link_libraries(autonomy_utils_lib ${Boost_LIBRARIES})
+target_link_libraries(autonomy_utils_lib Boost::filesystem
+                                         Boost::system)
 ament_target_dependencies(autonomy_utils_lib ${dependencies})
 ament_export_targets(autonomy_utils_libTargets HAS_LIBRARY_TARGET)
 ament_export_include_directories(include)
@@ -98,7 +99,8 @@ ament_export_libraries(autonomy_utils_lib ${Boost_LIBRARIES})
 ###################################KEYBOARD_NODE#####################################
 
 add_executable(keyboard_node src/nodes/keyboard_node.cpp)
-target_link_libraries(keyboard_node autonomy_utils_lib)
+target_link_libraries(keyboard_node autonomy_utils_lib Boost::filesystem
+Boost::system)
 ament_target_dependencies(keyboard_node ${dependencies})
 
 
