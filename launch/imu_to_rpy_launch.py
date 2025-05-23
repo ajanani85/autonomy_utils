@@ -20,9 +20,13 @@ def generate_launch_description():
     imu_to_rpy = LifecycleNode(
         package='autonomy_utils',
         executable='imu_to_rpy_node',
-        name='imu_to_rpy_node',
+        name=LaunchConfiguration('node_name'),
         namespace=TextSubstitution(text=''),
         parameters=[LaunchConfiguration('param_file')],
+        remappings=[
+            ('/imu/data', LaunchConfiguration('imu_topic')),
+            ('/imu/orientation', LaunchConfiguration('rpy_topic')),
+        ],
         output='screen',
     )
 
@@ -63,6 +67,9 @@ def generate_launch_description():
                                                                    'perception_logger.yaml')),
         DeclareLaunchArgument('auto_configure', default_value='true'),
         DeclareLaunchArgument('auto_activate', default_value='true'),
+        DeclareLaunchArgument('imu_topic', default_value='/imu/data'),
+        DeclareLaunchArgument('rpy_topic', default_value='/imu/orientation'),
+        DeclareLaunchArgument('node_name', default_value='imu_to_rpy_node'),
         imu_to_rpy,
         imu_to_rpy_configure_event_handler,
         imu_to_rpy_activate_event_handler,
