@@ -94,6 +94,10 @@ add_executable(keyboard_node src/nodes/keyboard_node.cpp)
 target_link_libraries(keyboard_node autonomy_utils_lib)
 ament_target_dependencies(keyboard_node ${dependencies})
 
+add_executable(imu_to_rpy_node src/nodes/imu_to_rpy_node.cpp)
+target_link_libraries(imu_to_rpy_node autonomy_utils_lib)
+ament_target_dependencies(imu_to_rpy_node ${dependencies})
+
 
 install(DIRECTORY include/
         DESTINATION include/
@@ -113,6 +117,7 @@ install(
 
 install(TARGETS
   keyboard_node
+  imu_to_rpy_node
   DESTINATION lib/${PROJECT_NAME})
 
 enable_testing()
