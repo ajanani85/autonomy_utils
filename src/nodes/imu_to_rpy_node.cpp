@@ -48,11 +48,11 @@ private:
         getParams();
         // Create a subscription to the IMU topic
         imu_sub_ = ros2::Node::node->create_subscription<sensor_msgs::msg::Imu>(
-            "/imu/data", 10, std::bind(&ImuOrientationConverterClass::imuCB, this, std::placeholders::_1));
+            "/imu/data", 400, std::bind(&ImuOrientationConverterClass::imuCB, this, std::placeholders::_1));
 
         // Create a publisher for the orientation topic
         orientation_pub_ = ros2::Node::node->create_publisher<geometry_msgs::msg::Vector3Stamped>(
-            "/imu/orientation", 10);
+            "/imu/orientation", 400);
     }
 
     void imuCB(const sensor_msgs::msg::Imu::SharedPtr msg)
