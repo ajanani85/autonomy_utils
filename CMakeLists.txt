@@ -104,8 +104,9 @@ install(DIRECTORY include/
     )
     
 install(DIRECTORY launch/
-        DESTINATION share/${PROJECT_NAME}
+        DESTINATION share/${PROJECT_NAME}/launch
     )
+
 install(
   TARGETS autonomy_utils_lib
   EXPORT autonomy_utils_libTargets
