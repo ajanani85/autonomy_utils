@@ -52,7 +52,7 @@ private:
 
         // Create a publisher for the orientation topic
         orientation_pub_ = ros2::Node::node->create_publisher<geometry_msgs::msg::Vector3Stamped>(
-            "/imu/orientation", 400);
+            "/imu/orientation", ros2::getSensorQoS(400));
     }
 
     void imuCB(const sensor_msgs::msg::Imu::SharedPtr msg)
