@@ -28,6 +28,7 @@
  #define Eigen2Point(E, P) {P.x = E[0];  P.y = E[1];  P.z = E[2];}
  
  
+
  namespace ros2 {
  
  struct Point {
@@ -199,12 +200,44 @@
          double origin_x, double origin_y,
          double& x, double& y);
  
- // Calculate the x, y coordinates from the GPS coordinates lat_from, lon_from to lat_tp, lon_to.
+/**
+ * @brief Calculates the x and y coordinates in a local Cartesian frame from GPS coordinates.
+ * 
+ * This function computes the x and y coordinates in a local Cartesian frame based on the 
+ * latitude and longitude of two points. The calculation assumes a flat Earth approximation 
+ * and uses the haversine formula to determine the distance between the two points.
+ * 
+ * @param lat_from Latitude of the starting point in degrees.
+ * @param lon_from Longitude of the starting point in degrees.
+ * @param lat_to Latitude of the target point in degrees.
+ * @param lon_to Longitude of the target point in degrees.
+ * @param x Reference to the variable where the calculated x-coordinate will be stored.
+ * @param y Reference to the variable where the calculated y-coordinate will be stored.
+ * 
+ * @note This function assumes that the Earth is a perfect sphere and does not account for 
+ *       ellipsoidal effects. It is suitable for small distances where the curvature of the 
+ *       Earth can be neglected.
+ */
  void latLon_to_XY(double lat_from, double lon_from, double lat_to, double lon_to, double& x, double& y);
  
- // Version 2 of latLong_to_XY function
- void latLon_to_XY(double ref_latitude, double ref_longitude, double enu_to_asset_frame_yaw,
-         double given_latitude, double given_longitude, double& X, double& Y, double earth_radius = 6365000);
+
+/**
+ * @brief Converts geographical coordinates (latitude and longitude) to Cartesian coordinates (X, Y) 
+ *        relative to a reference point using the ENU (East-North-Up) coordinate system.
+ * 
+ * @param ref_latitude The latitude of the reference point in degrees.
+ * @param ref_longitude The longitude of the reference point in degrees.
+ * @param enu_to_asset_frame_yaw The yaw angle (in radians) to rotate the ENU frame to align with the asset frame.
+ * @param given_latitude The latitude of the point to be converted in degrees.
+ * @param given_longitude The longitude of the point to be converted in degrees.
+ * @param X Reference to a double where the calculated X coordinate will be stored.
+ * @param Y Reference to a double where the calculated Y coordinate will be stored.
+ * @param earth_radius The radius of the Earth in meters (used for calculations).
+ * 
+ * @return bearing or heading between the pose and the reference
+ */
+ double latLon_to_XY(double ref_latitude, double ref_longitude, double enu_to_asset_frame_yaw,
+         double given_latitude, double given_longitude, double& X, double& Y, double earth_radius);
  
  //==================================
  // Rotating coordinates
