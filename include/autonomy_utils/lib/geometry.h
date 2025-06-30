@@ -236,8 +236,9 @@
  * 
  * @return bearing or heading between the pose and the reference
  */
- double latLon_to_XY(double ref_latitude, double ref_longitude, double enu_to_asset_frame_yaw,
-         double given_latitude, double given_longitude, double& X, double& Y, double earth_radius);
+ double latLon_to_XY(double ref_latitude, double ref_longitude, double given_latitude, double given_longitude, 
+        double enu_to_asset_frame_yaw,
+        double& X, double& Y, double earth_radius);
  
  //==================================
  // Rotating coordinates

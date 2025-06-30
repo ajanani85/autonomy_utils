@@ -273,8 +273,9 @@ void projectPosition(ros2::Point from, double direction, double distance, ros2::
     return;
 }
 
-double latLon_to_XY(double ref_latitude, double ref_longitude, double given_latitude, double enu_to_asset_frame_yaw,
-		double given_longitude, double& X, double& Y, double earth_radius)
+double latLon_to_XY(double ref_latitude, double ref_longitude, double given_latitude, double given_longitude, 
+        double enu_to_asset_frame_yaw,
+        double& X, double& Y, double earth_radius)
 {
 	double REFERENCE_LAT = M_PI * ref_latitude / 180.0;
 	double REFERENCE_LONG = M_PI * (ref_longitude) / 180.0;
