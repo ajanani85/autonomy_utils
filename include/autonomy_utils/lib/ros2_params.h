@@ -89,6 +89,16 @@ namespace ros2
 		return ros2::getParam(param_name, param);
 	}
 
+	/**
+	 * @brief Checks if a parameter with the given name exists in the node.
+	 * @param param_name The name of the parameter to check.
+	 * @return true if the parameter exists, false otherwise.
+	 */
+	inline bool hasParam(const std::string &param_name)
+	{
+		return ros2::Node::node->has_parameter(param_name);
+	}
+
 }
 
 #endif /*AUTONOMY_UTILS_INCLUDE_LIBS_ROS2_PARAMS_H_*/

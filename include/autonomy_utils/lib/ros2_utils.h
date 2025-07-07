@@ -50,6 +50,59 @@ namespace ros2
         // todo: complete for other important messages
     }
 
+    /**
+     * @brief Converts a std::vector<T> to a std::array<T, N>.
+     *        If the vector has fewer than N elements, the remaining array elements are default-initialized.
+     *        If the vector has more than N elements, only the first N are copied.
+     * @tparam T The type of the elements.
+     * @tparam N The fixed size of the array.
+     * @param vec The input vector.
+     * @return std::array<T, N> The resulting array.
+     */
+    template <typename T, std::size_t N>
+    std::array<T, N> vectorToArray(const std::vector<T> &vec)
+    {
+        std::array<T, N> arr{};
+        std::size_t count = std::min(vec.size(), N);
+        for (std::size_t i = 0; i < count; ++i)
+        {
+            arr[i] = vec[i];
+        }
+        return arr;
+    }
+
+    /**
+     * @brief Converts a std::array<T, N> to a comma-separated string.
+     * @tparam T The type of the array elements.
+     * @tparam N The size of the array.
+     * @param arr The input array.
+     * @return std::string The resulting string.
+     */
+    template <typename T, std::size_t N>
+    std::string arrayToString(const std::array<T, N> &arr)
+    {
+        std::ostringstream oss;
+        oss << "[";
+
+        for (std::size_t i = 0; i < N; ++i)
+        {
+            if constexpr (std::is_same_v<T, bool>)
+            {
+                oss << (arr[i] ? "true" : "false");
+            }
+            else
+            {
+                oss << arr[i];
+            }
+            if (i != N - 1)
+            {
+                oss << ", ";
+            }
+        }
+        oss << "]";
+        return oss.str();
+    }
+
 }
 
 #endif /*AUTONOMY_UTILS_INCLUDE_LIBS_ROS2_UTILS_H_*/
