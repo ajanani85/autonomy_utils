@@ -66,6 +66,12 @@ public:
       static void setNaN(pcl::PointXYZIR &point);
       static void setNaN(pcl::PointXYZ &point);
       static void setNaN(pcl::PointXYZRGB &point);
+
+      static void doTransform(const pcl::PointCloud<pcl::PointXYZ> &src, pcl::PointCloud<pcl::PointXYZ> &dst,
+            const geometry_msgs::msg::TransformStamped &transform);
+
+      static void doTransform(const pcl::PointCloud<pcl::PointXYZ>::Ptr &src, pcl::PointCloud<pcl::PointXYZ>::Ptr &dst,
+            const geometry_msgs::msg::TransformStamped &transform);
 };
 
 }

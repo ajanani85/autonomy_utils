@@ -48,6 +48,34 @@ geometry_msgs::msg::TransformStamped &TransformHandler::getTransform()
    
 }
 
+bool TransformHandler::getTransform(geometry_msgs::msg::TransformStamped &tf_stamped)
+{
+    if(!transformer_)
+    {
+        transformer_ = std::make_shared<ros2::Transformer>();
+    }
+
+    if(is_set_)
+    {
+        tf_stamped = tf_stamped_;
+        return true;
+    }
+
+    if(transformer_->getTransform(source_, target_, tf_stamped, 1.0, false))
+    {
+        is_set_ = true;
+        tf_stamped_ = tf_stamped;
+        return true;
+    }
+    else
+    {
+        ROS_INFO(RED "Cannot find a transform between src:%s and target:%s" COLOR_RESET, source_.c_str(), target_.c_str());
+        return false;
+    }
+
+    return false;
+}
+
 void TransformHandler::reset()
 {
     is_set_ = false;

@@ -53,6 +53,15 @@ public:
     geometry_msgs::msg::TransformStamped &getTransform();
 
     /**
+     * @brief Retrieves the current transformation and stores it in a TransformStamped object.
+     * This function checks if the transformation is set and retrieves it if available.
+     * @param tf_stamped A reference to a geometry_msgs::msg::TransformStamped object where the transformation will be stored.
+     * @return True if the transformation was successfully retrieved, false otherwise.
+     */
+    bool getTransform(geometry_msgs::msg::TransformStamped &tf_stamped);
+
+
+    /**
      * @brief Resets the transformation state.
      * 
      * Clears the current transformation data and marks the transformation as unset.
