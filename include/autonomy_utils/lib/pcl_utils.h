@@ -40,6 +40,8 @@ namespace ros2
 
             static void doTransform(const pcl::PointXYZIR &t_in, pcl::PointXYZIR &t_out, const geometry_msgs::msg::TransformStamped &transform);
 
+            static void doTransform(const pcl::PointXYZTIRRRA &t_in, pcl::PointXYZTIRRRA &t_out, const geometry_msgs::msg::TransformStamped &transform);
+
             static pcl::PointCloud<pcl::PointXYZIR>::ConstPtr convertToPointXYZIR(const sensor_msgs::msg::PointCloud2::SharedPtr pc2, pcl::PointCloud<pcl::PointXYZIR>::Ptr &pcl);
             static pcl::PointCloud<pcl::PointXYZ>::ConstPtr convertToPointXYZ(const sensor_msgs::msg::PointCloud2::SharedPtr pc2, pcl::PointCloud<pcl::PointXYZ>::Ptr &pcl);
             static bool convertToPointXYZ(const sensor_msgs::msg::Image::ConstSharedPtr &image, const sensor_msgs::msg::CameraInfo::SharedPtr &cam_info,

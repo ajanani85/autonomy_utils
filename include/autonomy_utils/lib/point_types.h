@@ -27,7 +27,7 @@ struct EIGEN_ALIGN16 PointXYZTIRRRA
  uint16_t reflectivity;
  uint16_t ring;
  uint16_t ambient;
- uint32_t time;
+ uint32_t t;
  EIGEN_MAKE_ALIGNED_OPERATOR_NEW   // make sure our new allocators are aligned
 } ;                    // enforce SSE padding for correct memory alignment
 
@@ -66,10 +66,11 @@ POINT_CLOUD_REGISTER_POINT_STRUCT (pcl::PointXYZTIRRRA,
                                     (float, y, y)
                                     (float, z, z)
                                     (float, range, range)
+                                    (float, intensity, intensity)
                                     (uint16_t, reflectivity, reflectivity)
                                     (uint16_t, ring, ring)
                                     (uint16_t, ambient, ambient)
-                                    (uint32_t, time, time)
+                                    (uint32_t, t, t)
 )
 
 #endif /*AUTONOMY_UTILS_LIB_POINT_TYPE_H_*/

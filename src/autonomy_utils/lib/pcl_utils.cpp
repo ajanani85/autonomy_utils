@@ -243,7 +243,7 @@ namespace ros2
 			pcl.points[index].reflectivity = *reflectivity_it;
 			pcl.points[index].ring = *ring_it;
 			pcl.points[index].ambient = *ambient_it;
-			pcl.points[index].time = *time_it;
+			pcl.points[index].t = *time_it;
 			pcl.points[index].range = sqrt(pcl.points[index].x * pcl.points[index].x + pcl.points[index].y * pcl.points[index].y);
 			index++;
 		}
@@ -366,6 +366,14 @@ namespace ros2
 		point.x = std::nanf("");
 		point.y = std::nanf("");
 		point.z = std::nanf("");
+	}
+
+	void PCLUtils::doTransform(const pcl::PointXYZTIRRRA &t_in, pcl::PointXYZTIRRRA &t_out, const geometry_msgs::msg::TransformStamped &transform)
+	{
+		KDL::Vector v_out = tf2::gmTransformToKDL(transform) * KDL::Vector(t_in.x, t_in.y, t_in.z);
+		t_out.x = v_out[0];
+		t_out.y = v_out[1];
+		t_out.z = v_out[2];
 	}
 
 	void PCLUtils::doTransform(const pcl::PointXYZ &t_in, pcl::PointXYZ &t_out, const geometry_msgs::msg::TransformStamped &transform)
