@@ -218,6 +218,50 @@ namespace ros2
 		return true;
 	}
 
+	void PCLUtils::convertToPointXYZTIRRRA(const sensor_msgs::msg::PointCloud2 &pc2, pcl::PointCloud<pcl::PointXYZTIRRRA> &pcl)
+	{
+		pcl.header = pcl_conversions::toPCL(pc2.header);
+		pcl.resize(pc2.height * pc2.width);
+		pcl.height = pc2.height;
+		pcl.width = pc2.width;
+		int index = 0;
+
+		sensor_msgs::PointCloud2ConstIterator<float> x_it(pc2, "x");
+		sensor_msgs::PointCloud2ConstIterator<float> y_it(pc2, "y");
+		sensor_msgs::PointCloud2ConstIterator<float> z_it(pc2, "z");
+		sensor_msgs::PointCloud2ConstIterator<float> intensity_it(pc2, "intensity");
+		sensor_msgs::PointCloud2ConstIterator<uint16_t> reflectivity_it(pc2, "reflectivity");
+		sensor_msgs::PointCloud2ConstIterator<uint16_t> ring_it(pc2, "ring");
+		sensor_msgs::PointCloud2ConstIterator<uint16_t> ambient_it(pc2, "ambient");
+		sensor_msgs::PointCloud2ConstIterator<uint32_t> time_it(pc2, "t");
+		for (; x_it != x_it.end(); ++x_it, ++y_it, ++z_it, ++intensity_it, ++reflectivity_it, ++ring_it, ++ambient_it, ++time_it)
+		{
+			pcl.points[index].x = *x_it;
+			pcl.points[index].y = *y_it;
+			pcl.points[index].z = *z_it;
+			pcl.points[index].intensity = *intensity_it;
+			pcl.points[index].reflectivity = *reflectivity_it;
+			pcl.points[index].ring = *ring_it;
+			pcl.points[index].ambient = *ambient_it;
+			pcl.points[index].time = *time_it;
+			pcl.points[index].range = sqrt(pcl.points[index].x * pcl.points[index].x + pcl.points[index].y * pcl.points[index].y);
+			index++;
+		}
+	}
+
+	void toPCL(const sensor_msgs::msg::PointCloud2::SharedPtr pc2, pcl::PointCloud<pcl::PointXYZ> &pcl)
+	{
+		ros2::PCLUtils::convertToPointXYZ(pc2, pcl);
+	}
+	void toPCL(const sensor_msgs::msg::PointCloud2::SharedPtr pc2, pcl::PointCloud<pcl::PointXYZIR> &pcl)
+	{
+		ros2::PCLUtils::convertToPointXYZIR(pc2, pcl);
+	}
+	void toPCL(const sensor_msgs::msg::PointCloud2 &pc2, pcl::PointCloud<pcl::PointXYZTIRRRA> &pcl)
+	{
+		ros2::PCLUtils::convertToPointXYZTIRRRA(pc2, pcl);
+	}
+
 	void PCLUtils::toPointCloud2(const pcl::PointCloud<pcl::PointXYZ> &cloud, sensor_msgs::msg::PointCloud2 &cloud_out)
 	{
 		pcl::toROSMsg<pcl::PointXYZ>(cloud, cloud_out);
@@ -231,6 +275,11 @@ namespace ros2
 	void PCLUtils::toPointCloud2(const pcl::PointCloud<pcl::PointXYZIR> &cloud, sensor_msgs::msg::PointCloud2 &cloud_out)
 	{
 		pcl::toROSMsg<pcl::PointXYZIR>(cloud, cloud_out);
+	}
+
+	void PCLUtils::toPointCloud2(const pcl::PointCloud<pcl::PointXYZTIRRRA> &cloud, sensor_msgs::msg::PointCloud2 &cloud_out)
+	{
+		pcl::toROSMsg<pcl::PointXYZTIRRRA>(cloud, cloud_out);
 	}
 
 	void PCLUtils::toPointCloud2(const pcl::PointCloud<pcl::PointXYZIR>::Ptr cloud,
@@ -257,6 +306,19 @@ namespace ros2
 			cloud_in.points[idx] = cloud.points[idx];
 		}
 		pcl::toROSMsg<pcl::PointXYZIR>(cloud_in, cloud_out);
+	}
+
+	void toROSMsg(const pcl::PointCloud<pcl::PointXYZ> &cloud, sensor_msgs::msg::PointCloud2 &cloud_out)
+	{
+		pcl::toROSMsg<pcl::PointXYZ>(cloud, cloud_out);
+	}
+	void toROSMsg(const pcl::PointCloud<pcl::PointXYZIR> &cloud, sensor_msgs::msg::PointCloud2 &cloud_out)
+	{
+		pcl::toROSMsg<pcl::PointXYZIR>(cloud, cloud_out);
+	}
+	void toROSMsg(const pcl::PointCloud<pcl::PointXYZTIRRRA> &cloud, sensor_msgs::msg::PointCloud2 &cloud_out)
+	{
+		pcl::toROSMsg<pcl::PointXYZTIRRRA>(cloud, cloud_out);
 	}
 
 	bool PCLUtils::isSetToNaN(pcl::PointXYZIR &point)

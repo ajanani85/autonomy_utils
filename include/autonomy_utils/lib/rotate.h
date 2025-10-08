@@ -73,6 +73,8 @@ namespace ros2
 
     static void rotate(double &x, double &y, double &z, geometry_msgs::msg::Quaternion &q_rot);
 
+    static void rotate(float &x, float &y, float &z, const geometry_msgs::msg::Quaternion &q_rot);
+
     static void rotate(double &x, double &y, double &z, const geometry_msgs::msg::Quaternion &q_rot);
 
     static void rotate(geometry_msgs::msg::Point32 &p, const geometry_msgs::msg::Quaternion &q_rot);
@@ -80,6 +82,9 @@ namespace ros2
     static void rotate(pcl::PointXYZIR &p, const geometry_msgs::msg::Quaternion &q_rot);
 
     static void rotate(pcl::PointXYZ &p, const geometry_msgs::msg::Quaternion &q_rot);
+
+    static void rotate(pcl::PointXYZTIRRRA &p, const geometry_msgs::msg::Quaternion &q_rot);
+
     static void rotate(pcl::PointXYZRGB &p, const geometry_msgs::msg::Quaternion &q_rot);
 
     /*

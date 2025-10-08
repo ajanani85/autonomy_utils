@@ -10,23 +10,35 @@
 #include <pcl/kdtree/impl/kdtree_flann.hpp>
 #include <pcl/point_types.h>
 namespace pcl {
-struct PointXYZIR
+struct EIGEN_ALIGN16 PointXYZIR
 {
  PCL_ADD_POINT4D;                  // preferred way of adding a XYZ+padding
  float intensity;
  float range;
  EIGEN_MAKE_ALIGNED_OPERATOR_NEW   // make sure our new allocators are aligned
-} EIGEN_ALIGN16;                    // enforce SSE padding for correct memory alignment
+} ;                    // enforce SSE padding for correct memory alignment
 
+// FOR XYZ + TIME + INTENSITY + RANGE + REFLECTIVITY + RING + AMBIENT
+struct EIGEN_ALIGN16 PointXYZTIRRRA
+{
+ PCL_ADD_POINT4D;                  // preferred way of adding a XYZ+padding
+ float intensity;
+ float range;
+ uint16_t reflectivity;
+ uint16_t ring;
+ uint16_t ambient;
+ uint32_t time;
+ EIGEN_MAKE_ALIGNED_OPERATOR_NEW   // make sure our new allocators are aligned
+} ;                    // enforce SSE padding for correct memory alignment
 
-struct PointXYZIRNormal
+struct EIGEN_ALIGN16 PointXYZIRNormal
 {
  PCL_ADD_POINT4D;                  // preferred way of adding a XYZ+padding
  PCL_ADD_UNION_NORMAL4D;
  float intensity;
  float range;
  EIGEN_MAKE_ALIGNED_OPERATOR_NEW   // make sure our new allocators are aligned
-} EIGEN_ALIGN16;                    // enforce SSE padding for correct memory alignment
+} ;                    // enforce SSE padding for correct memory alignment
 
 }
 
@@ -47,6 +59,17 @@ POINT_CLOUD_REGISTER_POINT_STRUCT (pcl::PointXYZIRNormal,
                                     (float, normal_z, normal_z)
                                     (float, intensity, intensity)
                                     (float, range, range)
- )
+)
+
+POINT_CLOUD_REGISTER_POINT_STRUCT (pcl::PointXYZTIRRRA,
+                                    (float, x, x)
+                                    (float, y, y)
+                                    (float, z, z)
+                                    (float, range, range)
+                                    (uint16_t, reflectivity, reflectivity)
+                                    (uint16_t, ring, ring)
+                                    (uint16_t, ambient, ambient)
+                                    (uint32_t, time, time)
+)
 
 #endif /*AUTONOMY_UTILS_LIB_POINT_TYPE_H_*/
