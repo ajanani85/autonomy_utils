@@ -2,8 +2,8 @@
 
 namespace ros2
 {
-    LifeCycle::LifeCycle(const std::string &node_name)
-        : rclcpp_lifecycle::LifecycleNode(node_name) {}
+    LifeCycle::LifeCycle(const std::string &node_name, rclcpp::NodeOptions node_options)
+        : rclcpp_lifecycle::LifecycleNode(node_name, node_options, true) {}
 
     /*
         ON CONFIGURE CALLBACK

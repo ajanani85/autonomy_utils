@@ -23,7 +23,7 @@ namespace ros2
     class LifeCycle : public rclcpp_lifecycle::LifecycleNode
     {
     public:
-        explicit LifeCycle(const std::string &node_name);
+        explicit LifeCycle(const std::string &node_name, rclcpp::NodeOptions node_options = rclcpp::NodeOptions());
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_configure(const rclcpp_lifecycle::State &state) override;
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_activate(const rclcpp_lifecycle::State &state) override;
         rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &state) override;
@@ -70,6 +70,7 @@ namespace ros2
         }
 
         static std::shared_ptr<ros2::LifeCycle> node;
+
     };
 
     rclcpp::QoS getSensorQoS(int q_size = 5);
