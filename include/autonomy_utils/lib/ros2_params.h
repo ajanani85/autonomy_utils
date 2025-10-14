@@ -30,6 +30,37 @@ namespace ros2
 			;
 		}
 	}
+
+	template <class T>
+	void declare_parameter(std::shared_ptr<rclcpp::Node> node, const std::string &param_name, const T &param)
+	{
+		try
+		{
+			node->declare_parameter(param_name, param);
+		}
+		catch (rclcpp::exceptions::ParameterAlreadyDeclaredException &e)
+		{
+			;
+		}
+	}
+
+	void getParam(rclcpp::Node::SharedPtr node, const std::string &param_name, std::vector<int> &param, const std::vector<int> &initial_value);
+	bool getParam(rclcpp::Node::SharedPtr node, const std::string &param_name, std::vector<int> &param);
+	// get parameter for vector of bytes
+	void getParam(rclcpp::Node::SharedPtr node, const std::string &param_name, std::vector<uint8_t> &param, const std::vector<uint8_t> &initial_value);
+	bool getParam(rclcpp::Node::SharedPtr node, const std::string &param_name, std::vector<uint8_t> &param);
+	// get parameter for vector of booleans
+	void getParam(rclcpp::Node::SharedPtr node, const std::string &param_name, std::vector<bool> &param, const std::vector<bool> &initial_value);
+	bool getParam(rclcpp::Node::SharedPtr node, const std::string &param_name, std::vector<bool> &param);
+	// get parameter for vector of doubles
+	void getParam(rclcpp::Node::SharedPtr node, const std::string &param_name, std::vector<double> &param, const std::vector<double> &initial_value);
+	bool getParam(rclcpp::Node::SharedPtr node, const std::string &param_name, std::vector<double> &param);
+	// get parameter for vector of strings
+	void getParam(rclcpp::Node::SharedPtr node, const std::string &param_name, std::vector<std::string> &param, const std::vector<std::string> &initial_value);
+	bool getParam(rclcpp::Node::SharedPtr node, const std::string &param_name, std::vector<std::string> &param);
+
+
+	
 	/**
 	 * @brief get parameter for vector of integers with initial value
 	 * 
@@ -63,6 +94,21 @@ namespace ros2
 	// get parameter for vector of strings
 	void getParam(const std::string &param_name, std::vector<std::string> &param, const std::vector<std::string> &initial_value);
 	bool getParam(const std::string &param_name, std::vector<std::string> &param);
+
+	template <class T>
+	void getParam(rclcpp::Node::SharedPtr node, const std::string &param_name, std::vector<T> &param, const std::vector<T> &initial_value)
+	{
+		ros2::declare_parameter(node, param_name, initial_value);
+		node->get_parameter(param_name, param);
+	}
+
+	template <class T>
+	bool getParam(rclcpp::Node::SharedPtr node, const std::string &param_name, T &param, const T &initial_value)
+	{
+		ros2::declare_parameter(node, param_name, initial_value);
+		return node->get_parameter_or(param_name, param, initial_value);
+	}
+	
 
 	// get parameters for all basic datatypes except arrays
 	template <class T>
