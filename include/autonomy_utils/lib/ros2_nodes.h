@@ -75,6 +75,8 @@ namespace ros2
 
     rclcpp::QoS getSensorQoS(int q_size = 5);
 
+    rclcpp::QoS getQoS(const std::string &name, int q_size);
+
     // toDuration() can be used whenever a float or double has to be converted to std::chrono::duration datatype
     // This function is needed when you are create a timer
     template <typename T>

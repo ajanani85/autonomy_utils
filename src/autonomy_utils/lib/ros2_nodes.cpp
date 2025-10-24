@@ -131,7 +131,7 @@ namespace ros2
 
     /**
      * @brief Get the Sensor QoS object
-     * 
+     *
      * @param q_size The size of the queue
      * @return rclcpp::QoS
      * @details This function returns the sensor QoS with the given queue size.
@@ -142,7 +142,23 @@ namespace ros2
         rclcpp::QoS qos = rclcpp::SensorDataQoS();
         qos.get_rmw_qos_profile().depth = q_size;
 
+        return qos;
+    }
 
+    rclcpp::QoS getQoS(const std::string &name, int q_size)
+    {
+
+        rclcpp::QoS qos = rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default));
+        qos = rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default)).reliable();
+        qos.history(rclcpp::HistoryPolicy::KeepLast).keep_last(q_size);
+        if (name == "RELIABLE")
+        {
+            return qos;
+        }
+        else if (name == "BEST_EFFORT")
+        {
+            return getSensorQoS(q_size);
+        }
         return qos;
     }
 
