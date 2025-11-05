@@ -16,6 +16,7 @@
  const double PI_2 = 1.5707963;
  
  #define C_EARTH (double) 6378137.0
+ #define E2 (double) 0.00669437999014 // eccentricity squared
  
  #define deg2rad(d) (((d) / 180.0) * _PI_R)
  #define rad2deg(d) (((d) / _PI_R) * 180.0)
@@ -239,6 +240,19 @@
  double latLon_to_XY(double ref_latitude, double ref_longitude, double given_latitude, double given_longitude, 
         double enu_to_asset_frame_yaw,
         double& X, double& Y, double earth_radius);
+
+/**
+ * @brief Converts Cartesian coordinates (X, Y) back to geographical coordinates (latitude and longitude)
+ *        relative to a reference point using the ENU (East-North-Up) coordinate system
+ * @param ref_latitude The latitude of the reference point in degrees.
+ * @param ref_longitude The longitude of the reference point in degrees.
+ * @param X The X coordinate to be converted.
+ * @param Y The Y coordinate to be converted.
+ * @param lat_out Reference to a double where the calculated latitude will be stored.
+ * @param lon_out Reference to a double where the calculated longitude will be stored.
+ */
+void XY_to_latLon(double ref_latitude, double ref_longitude, double X, double Y,
+        double& lat_out, double& lon_out);
  
  //==================================
  // Rotating coordinates
