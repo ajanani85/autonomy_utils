@@ -794,6 +794,119 @@ namespace ros2
         return ret_val;
     }
 
+    std::string getUTMZone(double latitude, double longitude)
+    {
+        std::string zone_str;
+
+        int zone_number = int((longitude + 180) / 6) + 1;
+        char hemisphere = (latitude >= 0) ? 'N' : 'S';
+        zone_str = std::to_string(zone_number) + hemisphere;
+
+        return zone_str;
+    }
+
+    bool utmToLatLon(double utm_easting, double utm_northing, const std::string &utm_zone,
+                     double &latitude, double &longitude)
+    {
+        if (utm_zone.empty())
+        {
+            return false;
+        }
+
+        //
+        // 1. Parse UTM zone ("10N", "33T", "14S", or just "10")
+        //
+        size_t i = 0;
+        while (i < utm_zone.size() && std::isdigit(static_cast<unsigned char>(utm_zone[i])))
+        {
+            ++i;
+        }
+
+        int zone_number = std::stoi(utm_zone.substr(0, i));
+
+        bool northern = true; // default
+        if (i < utm_zone.size())
+        {
+            char letter = std::toupper(utm_zone[i]);
+            northern = (letter >= 'N'); // C–M = south, N–X = north
+        }
+
+        //
+        // 2. WGS84 parameters
+        //
+        const double a = 6378137.0;
+        const double eccSquared = 0.00669437999014;
+        const double k0 = 0.9996;
+
+        //
+        // 3. Remove false Easting/Northing
+        //
+        double x = utm_easting - 500000.0;
+        double y = utm_northing;
+
+        if (!northern)
+            y -= 10000000.0; // 10,000,000 m offset for southern hemisphere
+
+        //
+        // 4. Compute footpoint latitude
+        //
+        double eccPrimeSquared = eccSquared / (1.0 - eccSquared);
+
+        double M = y / k0;
+        double mu = M / (a * (1.0 - eccSquared / 4.0 -
+                              3.0 * std::pow(eccSquared, 2) / 64.0 -
+                              5.0 * std::pow(eccSquared, 3) / 256.0));
+
+        double e1 = (1.0 - std::sqrt(1.0 - eccSquared)) /
+                    (1.0 + std::sqrt(1.0 - eccSquared));
+
+        double J1 = (3.0 * e1 / 2.0 - 27.0 * std::pow(e1, 3) / 32.0);
+        double J2 = (21.0 * std::pow(e1, 2) / 16.0 - 55.0 * std::pow(e1, 4) / 32.0);
+        double J3 = (151.0 * std::pow(e1, 3) / 96.0);
+        double J4 = (1097.0 * std::pow(e1, 4) / 512.0);
+
+        double phi1 = mu + J1 * std::sin(2.0 * mu) + J2 * std::sin(4.0 * mu) + J3 * std::sin(6.0 * mu) + J4 * std::sin(8.0 * mu);
+
+        //
+        // 5. Compute latitude and longitude
+        //
+        double sinPhi1 = std::sin(phi1);
+        double cosPhi1 = std::cos(phi1);
+
+        double N1 = a / std::sqrt(1.0 - eccSquared * sinPhi1 * sinPhi1);
+        double T1 = std::tan(phi1) * std::tan(phi1);
+        double C1 = eccPrimeSquared * cosPhi1 * cosPhi1;
+        double R1 = a * (1.0 - eccSquared) /
+                    std::pow(1.0 - eccSquared * sinPhi1 * sinPhi1, 1.5);
+
+        double D = x / (N1 * k0);
+
+        // Latitude (radians)
+        double lat_rad =
+            phi1 - (N1 * std::tan(phi1) / R1) *
+                       (D * D / 2.0 - (5.0 + 3.0 * T1 + 10.0 * C1 - 4.0 * C1 * C1 - 9.0 * eccPrimeSquared) * std::pow(D, 4) / 24.0 + (61.0 + 90.0 * T1 + 298.0 * C1 + 45.0 * T1 * T1 - 252.0 * eccPrimeSquared - 3.0 * C1 * C1) * std::pow(D, 6) / 720.0);
+
+        // Longitude relative to central meridian (radians)
+        double lon_rad =
+            (D - (1.0 + 2.0 * T1 + C1) * std::pow(D, 3) / 6.0 + (5.0 - 2.0 * C1 + 28.0 * T1 - 3.0 * C1 * C1 + 8.0 * eccPrimeSquared + 24.0 * T1 * T1) * std::pow(D, 5) / 120.0) / cosPhi1;
+
+        //
+        // 6. Add central meridian in radians
+        //
+        double lon0_deg = (zone_number - 1) * 6.0 - 180.0 + 3.0; // degrees
+        double lon0_rad = lon0_deg * M_PI / 180.0;
+
+        double lon_final_rad = lon0_rad + lon_rad;
+
+        //
+        // 7. Convert to degrees
+        //
+        latitude = lat_rad * 180.0 / M_PI;
+        longitude = lon_final_rad * 180.0 / M_PI;
+
+        return true;
+    }
+
     bool pointOnLineSegment(Eigen::Vector3d &X, Eigen::Vector3d &A, Eigen::Vector3d &B, Eigen::Vector3d &P)
     {
         Eigen::Vector3d dir = B - A;
