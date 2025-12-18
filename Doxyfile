@@ -47,5 +47,9 @@ QUIET                  = NO
 #-----------------------------------------------------------
 # UI
 #-----------------------------------------------------------
-GENERATE_TREEVIEW      = YES
-FULL_PATH_NAMES        = NO
+USE_MDFILE_AS_MAINPAGE = README.md
+GENERATE_TREEVIEW = YES
+FULL_PATH_NAMES = NO
+HTML_RELATIVE_PATH = YES
+
+
