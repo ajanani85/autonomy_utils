@@ -16,7 +16,7 @@ GENERATE_LATEX         = NO
 #-----------------------------------------------------------
 # Input
 #-----------------------------------------------------------
-INPUT                  = README.md include src
+INPUT                  = include src
 RECURSIVE              = YES
 
 FILE_PATTERNS          = *.h *.hpp *.cpp
