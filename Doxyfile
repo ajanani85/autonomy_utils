@@ -1,23 +1,51 @@
-# Doxygen Configuration File
-
+#-----------------------------------------------------------
+# Project
+#-----------------------------------------------------------
 PROJECT_NAME           = "autonomy_utils"
 PROJECT_NUMBER         = "1.0"
+PROJECT_BRIEF          = "Utility library for autonomy-related C++ helpers"
 
+#-----------------------------------------------------------
 # Output
-OUTPUT_DIRECTORY       = docs
+#-----------------------------------------------------------
+OUTPUT_DIRECTORY       = doc_generated
 GENERATE_HTML          = YES
+HTML_OUTPUT            = html
 GENERATE_LATEX         = NO
 
-# Input sources (relative to repo root)
-INPUT                  = include src
+#-----------------------------------------------------------
+# Input
+#-----------------------------------------------------------
+INPUT                  = README.md include src
 RECURSIVE              = YES
 
-# Extraction settings
-EXTRACT_ALL            = YES
-EXTRACT_PRIVATE        = NO
-EXTRACT_STATIC         = NO
+FILE_PATTERNS          = *.h *.hpp *.cpp
+EXTENSION_MAPPING      = h=C++ hpp=C++
 
-# UI / behavior
-GENERATE_TREEVIEW      = YES
+#-----------------------------------------------------------
+# Extraction
+#-----------------------------------------------------------
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = YES
+
+#-----------------------------------------------------------
+# Source browsing (very useful)
+#-----------------------------------------------------------
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = YES
+STRIP_FROM_PATH = include src
+
+#-----------------------------------------------------------
+# Documentation behavior
+#-----------------------------------------------------------
 WARN_IF_UNDOCUMENTED   = NO
+WARN_IF_DOC_ERROR      = YES
 QUIET                  = NO
+
+#-----------------------------------------------------------
+# UI
+#-----------------------------------------------------------
+GENERATE_TREEVIEW      = YES
+FULL_PATH_NAMES        = NO
