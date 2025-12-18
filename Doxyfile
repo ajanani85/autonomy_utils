@@ -19,7 +19,6 @@ GENERATE_LATEX         = NO
 # Include your main page first so it becomes the landing page
 INPUT                  = docs/mainpage.dox include src README.md
 RECURSIVE              = YES
-
 FILE_PATTERNS          = *.h *.hpp *.cpp *.dox
 EXTENSION_MAPPING      = h=C++ hpp=C++
 
@@ -36,7 +35,7 @@ EXTRACT_LOCAL_CLASSES  = YES
 #-----------------------------------------------------------
 SOURCE_BROWSER         = YES
 INLINE_SOURCES         = YES
-STRIP_FROM_PATH        = include src
+STRIP_FROM_PATH        = .
 
 #-----------------------------------------------------------
 # Documentation behavior
