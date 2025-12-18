@@ -1,15 +1,23 @@
 # Doxygen Configuration File
-PROJECT_NAME           = "@PROJECT_NAME@"
+
+PROJECT_NAME           = "autonomy_utils"
 PROJECT_NUMBER         = "1.0"
-OUTPUT_DIRECTORY       = "@CMAKE_CURRENT_BINARY_DIR@/docs"
+
+# Output
+OUTPUT_DIRECTORY       = docs
 GENERATE_HTML          = YES
 GENERATE_LATEX         = NO
-INPUT = "@CMAKE_CURRENT_SOURCE_DIR@/include"
-INPUT += "@CMAKE_CURRENT_SOURCE_DIR@/src"
-RECURSIVE             = YES
-EXTRACT_ALL           = YES
-EXTRACT_PRIVATE       = NO
-EXTRACT_STATIC        = NO
-GENERATE_TREEVIEW     = YES
-WARN_IF_UNDOCUMENTED  = NO
-QUIET                 = NO
+
+# Input sources (relative to repo root)
+INPUT                  = include src
+RECURSIVE              = YES
+
+# Extraction settings
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = NO
+
+# UI / behavior
+GENERATE_TREEVIEW      = YES
+WARN_IF_UNDOCUMENTED   = NO
+QUIET                  = NO
