@@ -9,17 +9,18 @@ PROJECT_BRIEF          = "Utility library for autonomy-related C++ helpers"
 # Output
 #-----------------------------------------------------------
 OUTPUT_DIRECTORY       = docs
-GENERATE_HTML          = YES
 HTML_OUTPUT            = html
+GENERATE_HTML          = YES
 GENERATE_LATEX         = NO
 
 #-----------------------------------------------------------
 # Input
 #-----------------------------------------------------------
-INPUT                  = include src
+# Include your main page first so it becomes the landing page
+INPUT                  = docs/mainpage.dox include src
 RECURSIVE              = YES
 
-FILE_PATTERNS          = *.h *.hpp *.cpp
+FILE_PATTERNS          = *.h *.hpp *.cpp *.dox
 EXTENSION_MAPPING      = h=C++ hpp=C++
 
 #-----------------------------------------------------------
@@ -31,11 +32,11 @@ EXTRACT_STATIC         = YES
 EXTRACT_LOCAL_CLASSES  = YES
 
 #-----------------------------------------------------------
-# Source browsing (very useful)
+# Source browsing
 #-----------------------------------------------------------
 SOURCE_BROWSER         = YES
 INLINE_SOURCES         = YES
-STRIP_FROM_PATH = include src
+STRIP_FROM_PATH        = include src
 
 #-----------------------------------------------------------
 # Documentation behavior
@@ -47,8 +48,6 @@ QUIET                  = NO
 #-----------------------------------------------------------
 # UI
 #-----------------------------------------------------------
-GENERATE_TREEVIEW = YES
-FULL_PATH_NAMES = NO
-HTML_RELATIVE_PATH = YES
-
-
+GENERATE_TREEVIEW      = YES
+FULL_PATH_NAMES        = NO
+HTML_RELATIVE_PATH     = YES
