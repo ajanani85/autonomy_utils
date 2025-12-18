@@ -17,7 +17,7 @@ GENERATE_LATEX         = NO
 # Input
 #-----------------------------------------------------------
 # Include your main page first so it becomes the landing page
-INPUT                  = docs/mainpage.dox include src
+INPUT                  = docs/mainpage.dox include src README.md
 RECURSIVE              = YES
 
 FILE_PATTERNS          = *.h *.hpp *.cpp *.dox
