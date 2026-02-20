@@ -10,6 +10,7 @@
 
 #include <eigen3/Eigen/Geometry>
 #include <eigen3/Eigen/StdVector>
+#include <GeographicLib/Geodesic.hpp>
 
 #define _PI_R 3.14159
 #define _TWOPI_R (2 * _PI_R)

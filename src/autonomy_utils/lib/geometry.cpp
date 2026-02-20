@@ -318,17 +318,45 @@ namespace ros2
 
     void latLon_to_XY(double lat_from, double lon_from, double lat_to, double lon_to, double &x, double &y)
     {
-        double lat_rad = deg2rad(lat_to);
-        double lon_rad = deg2rad(lon_to);
-        double ref_lat_rad = deg2rad(lat_from);
-        double ref_lon_rad = deg2rad(lon_from);
+        // double lat_rad = deg2rad(lat_to);
+        // double lon_rad = deg2rad(lon_to);
+        // double ref_lat_rad = deg2rad(lat_from);
+        // double ref_lon_rad = deg2rad(lon_from);
 
-        double dlat = lat_rad - ref_lat_rad;
-        double dlon = lon_rad - ref_lon_rad;
+        // double dlat = lat_rad - ref_lat_rad;
+        // double dlon = lon_rad - ref_lon_rad;
 
-        // Approximate x, y in meters
-        x = C_EARTH * dlon * cos(ref_lat_rad);
-        y = C_EARTH * dlat;
+        // // Approximate x, y in meters
+        // x = C_EARTH * dlon * cos(ref_lat_rad);
+        // y = C_EARTH * dlat;
+        // Compute geodesic between reference point and target point
+        double s12 = 0.0;
+        double azi1 = 0.0;
+        double azi2 = 0.0;
+
+        try
+        {
+            GeographicLib::Geodesic::WGS84().Inverse(lat_from, lon_from, lat_to, lon_to, s12, azi1, azi2);
+        }
+        catch (...)
+        {
+            return;
+        }
+
+        // If points coincide
+        if (s12 == 0.0)
+        {
+            x = 0.0;
+            y = 0.0;
+            return;
+        }
+
+        // azi1 is degrees clockwise from north; convert to radians
+        const double azi_rad = azi1 * (M_PI / 180.0);
+
+        // ENU: east = s * sin(azi), north = s * cos(azi)
+        x = s12 * std::sin(azi_rad);
+        y = s12 * std::cos(azi_rad);
     }
 
     void latLon_to_XY_origin(double lat_from, double lon_from,
@@ -344,20 +372,45 @@ namespace ros2
     void XY_to_latLon(double ref_latitude, double ref_longitude, double X, double Y,
                       double &lat_out, double &lon_out)
     {
-        // Convert reference lat/lon to radians
-        double lat0 = ref_latitude * M_PI / 180.0;
-        double lon0 = ref_longitude * M_PI / 180.0;
+        // // Convert reference lat/lon to radians
+        // double lat0 = ref_latitude * M_PI / 180.0;
+        // double lon0 = ref_longitude * M_PI / 180.0;
 
-        // Prime vertical radius of curvature
-        double N = C_EARTH / std::sqrt(1 - E2 * std::sin(lat0) * std::sin(lat0));
+        // // Prime vertical radius of curvature
+        // double N = C_EARTH / std::sqrt(1 - E2 * std::sin(lat0) * std::sin(lat0));
 
-        // Approximate differential changes
-        double dLat = Y / (N * (1 - E2) / std::pow(1 - E2 * std::sin(lat0) * std::sin(lat0), 1.5));
-        double dLon = X / (N * std::cos(lat0));
+        // // Approximate differential changes
+        // double dLat = Y / (N * (1 - E2) / std::pow(1 - E2 * std::sin(lat0) * std::sin(lat0), 1.5));
+        // double dLon = X / (N * std::cos(lat0));
 
-        // Convert to degrees
-        lat_out = ref_latitude + (dLat * 180.0 / M_PI);
-        lon_out = ref_longitude + (dLon * 180.0 / M_PI);
+        // // Convert to degrees
+        // lat_out = ref_latitude + (dLat * 180.0 / M_PI);
+        // lon_out = ref_longitude + (dLon * 180.0 / M_PI);
+
+        // distance and azimuth from reference to target
+        const double dist = std::hypot(X, Y); // meters
+        if (dist == 0.0)
+        {
+            lat_out = ref_latitude;
+            lon_out = ref_longitude;
+            return;
+        }
+        // azimuth: atan2(east, north) radians measured clockwise from north
+        const double az_rad = std::atan2(X, Y);
+        const double az_deg = az_rad * (180.0 / M_PI);
+
+        double lat2 = 0.0;
+        double lon2 = 0.0;
+        try
+        {
+            GeographicLib::Geodesic::WGS84().Direct(ref_latitude, ref_longitude, az_deg, dist, lat2, lon2);
+        }
+        catch (...)
+        {
+            return;
+        }
+        lat_out = lat2;
+        lon_out = lon2;
     }
 
     void pointToLine(ros2::Point &p1, ros2::Point &p2, ros2::Point &p3, ros2::Point &p4)
