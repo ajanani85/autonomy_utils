@@ -120,6 +120,8 @@ public:
 
     void startLogging(std::string prefix, unsigned log_level);
 
+    void startLogging(const std::string &prefix, unsigned log_level, rosbag2_storage::StorageOptions &options);
+
     void stopLogging();
 
     unsigned getLogLevel() const {

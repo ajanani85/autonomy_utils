@@ -1,7 +1,7 @@
 #include <autonomy_utils/lib/bag_logger.h>
 #include <filesystem>
 
-BagLogger* BagLogger::s_instance_ = 0;
+BagLogger *BagLogger::s_instance_ = 0;
 
 std::string BagLogger::getLogFileDir()
 {
@@ -11,7 +11,7 @@ std::string BagLogger::getLogFileDir()
   fs::path p(DEFAULT_MEDIA_DIR);
   try
   {
-    for (const auto& entry : fs::directory_iterator(p))
+    for (const auto &entry : fs::directory_iterator(p))
     {
       if (fs::is_directory(entry))
       {
@@ -23,7 +23,7 @@ std::string BagLogger::getLogFileDir()
       }
     }
   }
-  catch (const fs::filesystem_error& e)
+  catch (const fs::filesystem_error &e)
   {
     if (e.code() == std::errc::permission_denied)
     {
@@ -41,7 +41,7 @@ std::string BagLogger::getLogFileDir()
   return std::string(DEFAULT_BAG_DIR);
 }
 
-void BagLogger::add_topic(const std::string& topic, const std::string& message_in_str)
+void BagLogger::add_topic(const std::string &topic, const std::string &message_in_str)
 {
   rosbag2_storage::TopicMetadata tm;
   tm.name = topic;
@@ -71,7 +71,7 @@ std::string BagLogger::getSequence(std::string dir, std::string prefix)
   fs::path p(dir);
   try
   {
-    for (const auto& entry : fs::directory_iterator(p))
+    for (const auto &entry : fs::directory_iterator(p))
     {
       if (fs::is_directory(entry)) // Eliminate non-directory entries
       {
@@ -98,7 +98,7 @@ std::string BagLogger::getSequence(std::string dir, std::string prefix)
       }
     }
   }
-  catch (const fs::filesystem_error& e)
+  catch (const fs::filesystem_error &e)
   {
     if (e.code() == std::errc::permission_denied)
     {
@@ -123,7 +123,7 @@ std::string BagLogger::getLogFileName(std::string prefix, std::string suffix)
 {
   //    log_name_prefix_ = prefix;
   time_t rawtime;
-  struct tm* timeinfo;
+  struct tm *timeinfo;
   char buffer[80];
 
   time(&rawtime);
@@ -151,6 +151,41 @@ void BagLogger::dumpParams(std::string prefix)
   system(cmd.c_str());
 
   return;
+}
+
+void BagLogger::startLogging(const std::string &prefix, unsigned log_level, rosbag2_storage::StorageOptions &storage_option)
+{
+  if (is_logging_)
+  {
+    if ((prefix == prefix_) && (log_level == log_level_))
+    {
+      printf("LG: Already logging at prefix[%s] and log level[%d]\n", prefix.c_str(), log_level_);
+      return;
+    }
+    else
+    {
+      printf("LG: Closing bag file %s\n", file_name_.c_str());
+      // bag.close();
+      close_bagfile();
+      log_level_ = 0;
+      prefix_ = "";
+      is_logging_ = false;
+    }
+  }
+
+  if (log_level > 0)
+  {
+    prefix_ = prefix;
+    file_name_ = getLogFileName(prefix);
+    // bag.open(file_name_, rosbag::bagmode::Write);
+    printf("prefix: %s, file_name_: %s\n", prefix.c_str(), file_name_.c_str());
+    writer_ = std::make_unique<rosbag2_cpp::Writer>();
+    storage_option.uri = file_name_;
+    writer_->open(storage_option);
+    printf("Opening bag file %s\n", file_name_.c_str());
+    log_level_ = log_level;
+    is_logging_ = true;
+  }
 }
 
 void BagLogger::startLogging(std::string prefix, unsigned log_level)
@@ -203,7 +238,7 @@ void BagLogger::stopLogging()
   return;
 }
 
-void BagLogger::open_log(std::string prefix, FILE** debug_file, int log_level)
+void BagLogger::open_log(std::string prefix, FILE **debug_file, int log_level)
 {
   return;
   if (*debug_file != NULL)
@@ -223,7 +258,7 @@ void BagLogger::open_log(std::string prefix, FILE** debug_file, int log_level)
   }
 }
 
-void BagLogger::close_log(FILE** debug_file)
+void BagLogger::close_log(FILE **debug_file)
 {
   return;
   if (*debug_file != NULL)
@@ -233,7 +268,7 @@ void BagLogger::close_log(FILE** debug_file)
   }
 }
 
-void BagLogger::debug_log(FILE** debug_file, const char* format, ...)
+void BagLogger::debug_log(FILE **debug_file, const char *format, ...)
 {
   va_list args;
   return;
