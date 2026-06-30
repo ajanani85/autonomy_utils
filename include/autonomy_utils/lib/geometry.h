@@ -11,6 +11,7 @@
 #include <eigen3/Eigen/Geometry>
 #include <eigen3/Eigen/StdVector>
 #include <GeographicLib/Geodesic.hpp>
+#include <GeographicLib/UTMUPS.hpp>
 
 #define _PI_R 3.14159
 #define _TWOPI_R (2 * _PI_R)
@@ -310,6 +311,8 @@ namespace ros2
          * @return A string representing the UTM zone (e.g., "33T").
          */
         std::string getUTMZone(double latitude, double longitude);
+
+        void latLon_to_UTM(double latitude, double longitude, double &utm_easting, double &utm_northing, std::string &utm_zone);
 
         bool utmToLatLon(double utm_easting, double utm_northing, const std::string &utm_zone,
                          double &latitude, double &longitude);

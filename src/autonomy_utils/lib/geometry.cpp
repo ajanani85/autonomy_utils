@@ -858,6 +858,29 @@ namespace ros2
         return zone_str;
     }
 
+    /**
+     * @brief Converts latitude and longitude to UTM coordinates.
+     * @param latitude The latitude in decimal degrees.
+     * @param longitude The longitude in decimal degrees.
+     * @param utm_easting The UTM easting coordinate (output).
+     * @param utm_northing The UTM northing coordinate (output).
+     * @param utm_zone The UTM zone (output).
+     */
+    void latLon_to_UTM(double latitude, double longitude, double &utm_easting, double &utm_northing, std::string &utm_zone)
+    {
+        int zone;
+        bool northp;
+        try
+        {
+            GeographicLib::UTMUPS::Forward(latitude, longitude, zone, northp, utm_easting, utm_northing);
+        }   
+        catch (...)
+        {
+            return;
+        }
+        utm_zone = std::to_string(zone) + (northp ? 'N' : 'S');
+    }
+
     bool utmToLatLon(double utm_easting, double utm_northing, const std::string &utm_zone,
                      double &latitude, double &longitude)
     {
