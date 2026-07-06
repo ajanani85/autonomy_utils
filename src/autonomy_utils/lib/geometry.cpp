@@ -413,6 +413,37 @@ namespace ros2
         lon_out = lon2;
     }
 
+    void transform(double ref_latitude, double ref_longitude, double x, double y, double heading, double &latitude, double &longitude)
+    {
+        const double dist = std::hypot(x, y);
+        if (dist == 0.0)
+        {
+            latitude = ref_latitude;
+            longitude = ref_longitude;
+            return;
+        }
+
+        // (x, y) are expressed in a frame rotated by 'heading' (radians) relative to
+        // true north, the same convention latLon_to_XY() uses to produce them
+        // (X = cos(bearing - heading) * d, Y = -sin(bearing - heading) * d).
+        // Undo that rotation to recover the compass bearing from the reference point.
+        const double bearing_rad = heading + std::atan2(-y, x);
+        const double bearing_deg = bearing_rad * (180.0 / M_PI);
+
+        double lat2 = 0.0;
+        double lon2 = 0.0;
+        try
+        {
+            GeographicLib::Geodesic::WGS84().Direct(ref_latitude, ref_longitude, bearing_deg, dist, lat2, lon2);
+        }
+        catch (...)
+        {
+            return;
+        }
+        latitude = lat2;
+        longitude = lon2;
+    }
+
     void pointToLine(ros2::Point &p1, ros2::Point &p2, ros2::Point &p3, ros2::Point &p4)
     {
         double dx = p2.x - p1.x;

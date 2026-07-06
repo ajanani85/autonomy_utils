@@ -265,6 +265,20 @@ namespace ros2
         void XY_to_latLon(double ref_latitude, double ref_longitude, double X, double Y,
                           double &lat_out, double &lon_out);
 
+        /**
+         * @brief this function transforms the ref_latitude and ref_longitude with the passed cartesian coordinates and
+         * returns the new latitude and longitude
+         * 
+         * @param ref_latitude the latitude of the reference point in degrees
+         * @param ref_longitude the longitude of the reference point in degrees
+         * @param x the x coordinate of the transform
+         * @param y the y coordinate of the transform
+         * @param heading the heading of the transform
+         * @param latitude the final projected latitude in degrees
+         * @param longitude the final projected longitude in degrees
+         */
+        void transform(double ref_latitude, double ref_longitude, double x, double y, double heading, double &latitude, double &longitude);
+
         //==================================
         // Rotating coordinates
         //==================================
@@ -303,7 +317,7 @@ namespace ros2
         // This method takes an orientation expressed as a quaternion and levels it out by zeroing the roll and pich
         void levelOrientation(const geometry_msgs::msg::Quaternion &org_orientation, geometry_msgs::msg::Quaternion &level_orientation);
         void levelOrientation(const Eigen::Quaterniond &org_orientation, Eigen::Quaterniond &level_orientation);
-        
+
         /**
          * @brief Determines the UTM zone for given latitude and longitude coordinates.
          * @param latitude The latitude in decimal degrees.
