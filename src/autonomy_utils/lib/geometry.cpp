@@ -413,35 +413,62 @@ namespace ros2
         lon_out = lon2;
     }
 
-    void transform(double ref_latitude, double ref_longitude, double x, double y, double heading, double &latitude, double &longitude)
+    void latlong_transform( double antenna_latitude, double antenna_longitude, double antenna_x_from_base, double antenna_y_from_base,
+        double heading_radian_enu, double &base_latitude, double &base_longitude)
     {
-        const double dist = std::hypot(x, y);
+        // Antenna position relative to base_link in base_link frame:
+        // +x = forward, +y = left
+        //
+        // We want base_link relative to antenna, so negate it.
+        const double dx_base = antenna_x_from_base;
+        const double dy_base = antenna_y_from_base;
+
+        const double dist = std::hypot(dx_base, dy_base);
+
         if (dist == 0.0)
         {
-            latitude = ref_latitude;
-            longitude = ref_longitude;
+            base_latitude = antenna_latitude;
+            base_longitude = antenna_longitude;
             return;
         }
 
-        // (x, y) are expressed in a frame rotated by 'heading' (radians) relative to
-        // true north, the same convention latLon_to_XY() uses to produce them
-        // (X = cos(bearing - heading) * d, Y = -sin(bearing - heading) * d).
-        // Undo that rotation to recover the compass bearing from the reference point.
-        const double bearing_rad = heading + std::atan2(-y, x);
-        const double bearing_deg = bearing_rad * (180.0 / M_PI);
+        // Convert base_link-frame offset into ENU offset.
+        //
+        // heading_radian_enu is vehicle yaw in ENU:
+        // 0 = East, +pi/2 = North.
+        const double east =
+            dx_base * std::cos(heading_radian_enu) -
+            dy_base * std::sin(heading_radian_enu);
+
+        const double north =
+            dx_base * std::sin(heading_radian_enu) +
+            dy_base * std::cos(heading_radian_enu);
+
+        // GeographicLib bearing convention:
+        // 0 deg = North, 90 deg = East.
+        const double bearing_rad = std::atan2(east, north);
+        const double bearing_deg = bearing_rad * 180.0 / M_PI;
 
         double lat2 = 0.0;
         double lon2 = 0.0;
+
         try
         {
-            GeographicLib::Geodesic::WGS84().Direct(ref_latitude, ref_longitude, bearing_deg, dist, lat2, lon2);
+            GeographicLib::Geodesic::WGS84().Direct(
+                antenna_latitude,
+                antenna_longitude,
+                bearing_deg,
+                dist,
+                lat2,
+                lon2);
         }
         catch (...)
         {
             return;
         }
-        latitude = lat2;
-        longitude = lon2;
+
+        base_latitude = lat2;
+        base_longitude = lon2;
     }
 
     void pointToLine(ros2::Point &p1, ros2::Point &p2, ros2::Point &p3, ros2::Point &p4)
@@ -904,7 +931,7 @@ namespace ros2
         try
         {
             GeographicLib::UTMUPS::Forward(latitude, longitude, zone, northp, utm_easting, utm_northing);
-        }   
+        }
         catch (...)
         {
             return;

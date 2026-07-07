@@ -269,15 +269,16 @@ namespace ros2
          * @brief this function transforms the ref_latitude and ref_longitude with the passed cartesian coordinates and
          * returns the new latitude and longitude
          * 
-         * @param ref_latitude the latitude of the reference point in degrees
-         * @param ref_longitude the longitude of the reference point in degrees
-         * @param x the x coordinate of the transform
-         * @param y the y coordinate of the transform
-         * @param heading the heading of the transform
-         * @param latitude the final projected latitude in degrees
-         * @param longitude the final projected longitude in degrees
+         * @param antenna_latitude the latitude of the antenna in degrees
+         * @param antenna_longitude the longitude of the antenna in degrees
+         * @param antenna_x_from_base the x coordinate of the antenna relative to the base
+         * @param antenna_y_from_base the y coordinate of the antenna relative to the base
+         * @param heading_radian_enu the heading of the transform in radians
+         * @param base_latitude the final projected latitude of the base in degrees
+         * @param base_longitude the final projected longitude of the base in degrees
          */
-        void transform(double ref_latitude, double ref_longitude, double x, double y, double heading, double &latitude, double &longitude);
+        void latlong_transform(double antenna_latitude, double antenna_longitude, double antenna_x_from_base, 
+                double antenna_y_from_base, double heading_radian_enu, double &base_latitude, double &base_longitude);
 
         //==================================
         // Rotating coordinates
