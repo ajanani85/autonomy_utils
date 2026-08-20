@@ -56,6 +56,10 @@ public:
     ~BagLogger()
     {
     	writer_.release();
+        if (is_logging_ || writer_)
+        {
+            close_bagfile();
+        }
     }
 
     void add_topic(const std::string &topic, const std::string &message_in_str);
@@ -185,6 +189,11 @@ public:
     void close_bagfile()
     {
     	writer_->get_implementation_handle().close();
+        if (writer_)
+        {
+            writer_->close();
+            writer_.reset();
+        }
     }
 
 private:
