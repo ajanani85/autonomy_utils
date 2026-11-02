@@ -71,6 +71,12 @@ namespace ros2
 
         static std::shared_ptr<ros2::LifeCycle> node;
 
+        // Returns the PID of the process running the given ROS node, or -1 if not found.
+        // node_name can be bare ("ublox_dgnss_base") or fully qualified ("/base/ublox_dgnss_base").
+        // Found with "ps -aux | grep -w <base name>"; if a namespace is given, the line must also have "__ns:=<namespace>".
+        // Components inside a container are not found.
+        static int get_node_pid(const std::string &node_name);
+
     };
 
     rclcpp::QoS getSensorQoS(int q_size = 5);
