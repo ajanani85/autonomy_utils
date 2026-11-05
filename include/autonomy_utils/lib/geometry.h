@@ -5,6 +5,7 @@
 #include <geometry_msgs/msg/quaternion.hpp>
 #include <geometry_msgs/msg/point.hpp>
 #include <geometry_msgs/msg/vector3.hpp>
+#include <rtcm_msgs/msg/message.hpp>
 #include <tf2/transform_datatypes.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 
@@ -331,6 +332,58 @@ namespace ros2
 
         bool utmToLatLon(double utm_easting, double utm_northing, const std::string &utm_zone,
                          double &latitude, double &longitude);
+
+        /**
+         * @brief Converts a WGS84 latitude/longitude to NAD83(2011) using PROJ.
+         *
+         * PROJ's default "WGS 84 -> NAD83" operation is a null transform (zero offset, ~2-4 m accuracy),
+         * so this instead treats WGS84 as ITRF2014 (current WGS84 realizations agree with it at the cm level)
+         * and applies the NGS time-dependent ITRF2014 -> NAD83(2011) Helmert transform (EPSG:7807).
+         * The resulting shift is ~1-1.5 m across CONUS.
+         *
+         * @param latitude WGS84 latitude in decimal degrees.
+         * @param longitude WGS84 longitude in decimal degrees.
+         * @param nad83_latitude NAD83(2011) latitude in decimal degrees (output).
+         * @param nad83_longitude NAD83(2011) longitude in decimal degrees (output).
+         * @param epoch Observation epoch as a decimal year (e.g. 2026.84). Values <= 0 use the current date.
+         * @return true on success, false if PROJ could not create or apply the transform.
+         */
+        bool wgs84_to_nad83(double latitude, double longitude, double &nad83_latitude, double &nad83_longitude,
+                            double epoch = 0.0);
+
+        /**
+         * @brief Converts a NAD83(2011) latitude/longitude to WGS84 using PROJ. Inverse of wgs84_to_nad83.
+         *
+         * Applies the NGS time-dependent NAD83(2011) -> ITRF2014 Helmert transform (inverse of EPSG:7807)
+         * and treats the ITRF2014 result as WGS84 (current WGS84 realizations agree with it at the cm level).
+         *
+         * @param nad83_latitude NAD83(2011) latitude in decimal degrees.
+         * @param nad83_longitude NAD83(2011) longitude in decimal degrees.
+         * @param latitude WGS84 latitude in decimal degrees (output).
+         * @param longitude WGS84 longitude in decimal degrees (output).
+         * @param epoch Observation epoch as a decimal year (e.g. 2026.84). Values <= 0 use the current date.
+         * @return true on success, false if PROJ could not create or apply the transform.
+         */
+        bool nad83_to_wgs84(double nad83_latitude, double nad83_longitude, double &latitude, double &longitude,
+                            double epoch = 0.0);
+
+        //==================================
+        // RTCM
+        //==================================
+
+        /**
+         * @brief Decodes an RTCM3 message into a human-readable report.
+         *
+         * Every RTCM3 frame in msg.message is CRC-checked and decoded. Supported types: 1005/1006 (base station
+         * position, also given as WGS84 lat/lon/h), 1007/1008/1033 (antenna/receiver descriptors), 1013 (system
+         * parameters), 1230 (GLONASS code-phase biases), MSM1-7 for GPS/GLONASS/Galileo/SBAS/QZSS/BeiDou/NavIC
+         * (epoch, satellites, signals and, for MSM4-7, CNR per signal) and the satellite IDs of
+         * 1019/1020/1042/1044/1045/1046 ephemerides. Other types are reported by number only.
+         *
+         * @param msg RTCM message as published by an NTRIP client / GNSS driver.
+         * @return multi-line report; one block per RTCM frame.
+         */
+        std::string rtcmToString(const rtcm_msgs::msg::Message &msg);
 
         //==================================
         // Debug stuff

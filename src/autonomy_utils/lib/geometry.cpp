@@ -5,6 +5,14 @@
  *      Author: ubuntu
  */
 #include <autonomy_utils/lib/geometry.h>
+#include <proj.h>
+#include <GeographicLib/Geocentric.hpp>
+#include <cstring>
+#include <ctime>
+#include <iomanip>
+#include <map>
+#include <sstream>
+#include <stdexcept>
 
 namespace ros2
 {
@@ -937,6 +945,472 @@ namespace ros2
             return;
         }
         utm_zone = std::to_string(zone) + (northp ? 'N' : 'S');
+    }
+
+    // Current date as a decimal year (e.g. 2026.84), the epoch format PROJ's time-dependent transforms expect.
+    static double currentDecimalYear()
+    {
+        std::time_t now = std::time(nullptr);
+        std::tm utc;
+        gmtime_r(&now, &utc);
+        int year = utc.tm_year + 1900;
+        bool leap = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+        double day_of_year = utc.tm_yday + (utc.tm_hour + (utc.tm_min + utc.tm_sec / 60.0) / 60.0) / 24.0;
+        return year + day_of_year / (leap ? 366.0 : 365.0);
+    }
+
+    // PROJ objects are not thread-safe and creating one does a proj.db lookup, so each thread
+    // builds its transform once and reuses it.
+    struct ProjWgs84Nad83
+    {
+        PJ_CONTEXT *ctx = nullptr;
+        PJ *transform = nullptr;
+
+        ProjWgs84Nad83()
+        {
+            ctx = proj_context_create();
+            // ITRF2014 geographic 3D -> NAD83(2011) geographic 3D. Both CRSs use lat, lon, h axis order in degrees.
+            transform = proj_create_crs_to_crs(ctx, "EPSG:7912", "EPSG:6319", nullptr);
+        }
+
+        ~ProjWgs84Nad83()
+        {
+            if (transform)
+                proj_destroy(transform);
+            if (ctx)
+                proj_context_destroy(ctx);
+        }
+    };
+
+    // Applies the ITRF2014 <-> NAD83(2011) transform in the given direction (PJ_FWD: WGS84 -> NAD83, PJ_INV: NAD83 -> WGS84).
+    static bool transformWgs84Nad83(PJ_DIRECTION direction, double latitude, double longitude,
+                                    double &out_latitude, double &out_longitude, double epoch)
+    {
+        thread_local ProjWgs84Nad83 proj;
+        if (!proj.transform)
+        {
+            return false;
+        }
+
+        if (epoch <= 0.0)
+        {
+            epoch = currentDecimalYear();
+        }
+
+        // Ellipsoidal height of 0: its effect on the horizontal shift is sub-millimetre.
+        PJ_COORD out = proj_trans(proj.transform, direction, proj_coord(latitude, longitude, 0.0, epoch));
+        if (out.v[0] == HUGE_VAL || out.v[1] == HUGE_VAL)
+        {
+            return false;
+        }
+
+        out_latitude = out.v[0];
+        out_longitude = out.v[1];
+        return true;
+    }
+
+    bool wgs84_to_nad83(double latitude, double longitude, double &nad83_latitude, double &nad83_longitude,
+                        double epoch)
+    {
+        return transformWgs84Nad83(PJ_FWD, latitude, longitude, nad83_latitude, nad83_longitude, epoch);
+    }
+
+    bool nad83_to_wgs84(double nad83_latitude, double nad83_longitude, double &latitude, double &longitude,
+                        double epoch)
+    {
+        return transformWgs84Nad83(PJ_INV, nad83_latitude, nad83_longitude, latitude, longitude, epoch);
+    }
+
+    //==================================
+    // RTCM
+    //==================================
+
+    // MSB-first bit reader over an RTCM3 payload.
+    class RtcmBits
+    {
+    public:
+        RtcmBits(const uint8_t *data, size_t len) : data_(data), nbits_(len * 8) {}
+
+        uint64_t u(int k)
+        {
+            if (pos_ + k > nbits_)
+                throw std::out_of_range("RTCM payload too short");
+            uint64_t v = 0;
+            for (int i = 0; i < k; ++i, ++pos_)
+                v = (v << 1) | ((data_[pos_ / 8] >> (7 - pos_ % 8)) & 1);
+            return v;
+        }
+
+        int64_t s(int k)
+        {
+            uint64_t v = u(k);
+            return (v & (1ULL << (k - 1))) ? static_cast<int64_t>(v) - (1LL << k) : static_cast<int64_t>(v);
+        }
+
+        std::string chars(size_t n)
+        {
+            std::string out;
+            for (size_t i = 0; i < n; ++i)
+                out += static_cast<char>(u(8));
+            return out;
+        }
+
+        void skip(size_t k) { pos_ += k; }
+
+    private:
+        const uint8_t *data_;
+        size_t nbits_;
+        size_t pos_ = 0;
+    };
+
+    static uint32_t rtcmCrc24q(const uint8_t *data, size_t len)
+    {
+        uint32_t crc = 0;
+        for (size_t i = 0; i < len; ++i)
+        {
+            crc ^= static_cast<uint32_t>(data[i]) << 16;
+            for (int j = 0; j < 8; ++j)
+            {
+                crc <<= 1;
+                if (crc & 0x1000000)
+                    crc ^= 0x1864CFB;
+            }
+        }
+        return crc & 0xFFFFFF;
+    }
+
+    struct RtcmGnss
+    {
+        const char *name;
+        char prefix;
+        std::map<int, const char *> signals;
+    };
+
+    // MSM message number / 10 -> constellation and its signal-mask IDs (RTCM 10403.3 tables 3.5-91 ff.)
+    static const std::map<int, RtcmGnss> &rtcmGnssTable()
+    {
+        static const std::map<int, RtcmGnss> table = {
+            {107, {"GPS", 'G', {{2, "L1C/A"}, {3, "L1P"}, {4, "L1W"}, {8, "L2C"}, {9, "L2P"}, {10, "L2W"}, {15, "L2C(M)"}, {16, "L2C(L)"}, {17, "L2C(M+L)"}, {22, "L5I"}, {23, "L5Q"}, {24, "L5(I+Q)"}, {30, "L1C-D"}, {31, "L1C-P"}, {32, "L1C(D+P)"}}}},
+            {108, {"GLONASS", 'R', {{2, "G1C/A"}, {3, "G1P"}, {8, "G2C/A"}, {9, "G2P"}}}},
+            {109, {"Galileo", 'E', {{2, "E1C"}, {3, "E1A"}, {4, "E1B"}, {5, "E1(B+C)"}, {6, "E1(A+B+C)"}, {8, "E6C"}, {9, "E6A"}, {10, "E6B"}, {11, "E6(B+C)"}, {12, "E6(A+B+C)"}, {14, "E5bI"}, {15, "E5bQ"}, {16, "E5b(I+Q)"}, {18, "E5(A+B)I"}, {19, "E5(A+B)Q"}, {20, "E5(A+B)(I+Q)"}, {22, "E5aI"}, {23, "E5aQ"}, {24, "E5a(I+Q)"}}}},
+            {110, {"SBAS", 'S', {{2, "L1C/A"}, {22, "L5I"}, {23, "L5Q"}, {24, "L5(I+Q)"}}}},
+            {111, {"QZSS", 'J', {{2, "L1C/A"}, {9, "L6S"}, {10, "L6L"}, {11, "L6(S+L)"}, {15, "L2C(M)"}, {16, "L2C(L)"}, {17, "L2C(M+L)"}, {22, "L5I"}, {23, "L5Q"}, {24, "L5(I+Q)"}, {30, "L1C-D"}, {31, "L1C-P"}, {32, "L1C(D+P)"}}}},
+            {112, {"BeiDou", 'C', {{2, "B1I"}, {3, "B1Q"}, {4, "B1(I+Q)"}, {8, "B3I"}, {9, "B3Q"}, {10, "B3(I+Q)"}, {14, "B2I"}, {15, "B2Q"}, {16, "B2(I+Q)"}, {22, "B2aD"}, {23, "B2aP"}, {24, "B2a(D+P)"}, {25, "B2bI"}, {30, "B1C-D"}, {31, "B1C-P"}, {32, "B1C(D+P)"}}}},
+            {113, {"NavIC", 'I', {{22, "L5A"}}}},
+        };
+        return table;
+    }
+
+    static bool rtcmIsMsm(int mt)
+    {
+        return rtcmGnssTable().count(mt / 10) && mt % 10 >= 1 && mt % 10 <= 7;
+    }
+
+    static std::string rtcmDescribe(int mt)
+    {
+        static const std::map<int, const char *> names = {
+            {1005, "Station ARP"}, {1006, "Station ARP + height"}, {1007, "Antenna descriptor"},
+            {1008, "Antenna descriptor + serial"}, {1013, "System parameters"}, {1019, "GPS ephemeris"},
+            {1020, "GLONASS ephemeris"}, {1033, "Receiver & antenna descriptors"}, {1042, "BeiDou ephemeris"},
+            {1044, "QZSS ephemeris"}, {1045, "Galileo F/NAV ephemeris"}, {1046, "Galileo I/NAV ephemeris"},
+            {1230, "GLONASS code-phase biases"}};
+        if (rtcmIsMsm(mt))
+            return std::string(rtcmGnssTable().at(mt / 10).name) + " MSM" + std::to_string(mt % 10);
+        auto it = names.find(mt);
+        if (it != names.end())
+            return it->second;
+        return mt >= 4001 ? "Proprietary" : "Unsupported type";
+    }
+
+    // Formats milliseconds into the week/day as "Day HH:MM:SS.sss" (day omitted if with_day is false).
+    static std::string rtcmFormatTime(double ms, bool with_day = true)
+    {
+        static const char *days[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+        double s = ms / 1000.0;
+        int d = static_cast<int>(s / 86400.0);
+        s -= d * 86400.0;
+        int h = static_cast<int>(s / 3600.0);
+        s -= h * 3600.0;
+        int m = static_cast<int>(s / 60.0);
+        s -= m * 60.0;
+        char buf[48];
+        if (with_day)
+            snprintf(buf, sizeof(buf), "%s %02d:%02d:%06.3f", days[d % 7], h, m, s);
+        else
+            snprintf(buf, sizeof(buf), "%02d:%02d:%06.3f", h, m, s);
+        return buf;
+    }
+
+    static void rtcmDecodeStation(RtcmBits &b, int mt, std::ostringstream &os)
+    {
+        int sta = b.u(12);
+        int itrf = b.u(6);
+        bool gps = b.u(1), glo = b.u(1), gal = b.u(1), ref = b.u(1);
+        double x = b.s(38) * 1e-4;
+        b.u(2);
+        double y = b.s(38) * 1e-4;
+        b.u(2);
+        double z = b.s(38) * 1e-4;
+
+        double lat, lon, h;
+        GeographicLib::Geocentric::WGS84().Reverse(x, y, z, lat, lon, h);
+
+        os << std::fixed;
+        os << "Reference station " << sta << " position (ARP), ITRF realization year " << itrf << "\n"
+           << std::setprecision(4) << "  ECEF X/Y/Z : " << x << ", " << y << ", " << z << " m\n"
+           << std::setprecision(9) << "  Lat/Lon    : " << lat << ", " << lon
+           << std::setprecision(4) << "  h " << h << " m (ellipsoidal)\n"
+           << "  Systems:" << (gps ? " GPS" : "") << (glo ? " GLONASS" : "") << (gal ? " Galileo" : "")
+           << (ref ? "; virtual/non-physical station" : "; physical station") << "\n";
+        if (mt == 1006)
+            os << "  Antenna height above marker: " << b.u(16) * 1e-4 << " m\n";
+    }
+
+    static void rtcmDecodeAntenna(RtcmBits &b, int mt, std::ostringstream &os)
+    {
+        int sta = b.u(12);
+        std::string desc = b.chars(b.u(8));
+        int setup = b.u(8);
+        os << "Station " << sta << " antenna: '" << desc << "' (setup ID " << setup << ")\n";
+        if (mt == 1008 || mt == 1033)
+            os << "  Antenna serial: '" << b.chars(b.u(8)) << "'\n";
+        if (mt == 1033)
+        {
+            std::string rcv = b.chars(b.u(8));
+            std::string fw = b.chars(b.u(8));
+            std::string serial = b.chars(b.u(8));
+            os << "  Receiver: '" << rcv << "', firmware '" << fw << "', serial '" << serial << "'\n";
+        }
+    }
+
+    static void rtcmDecodeSystemParams(RtcmBits &b, std::ostringstream &os)
+    {
+        int sta = b.u(12);
+        int mjd = b.u(16);
+        int sod = b.u(17);
+        int n = b.u(5);
+        int leap = b.u(8);
+        os << "Station " << sta << " system parameters: MJD " << mjd << ", " << rtcmFormatTime(sod * 1000.0, false)
+           << " UTC, leap seconds " << leap << "\n  Announced message schedule:\n";
+        for (int i = 0; i < n; ++i)
+        {
+            int id = b.u(12);
+            bool sync = b.u(1);
+            double interval = b.u(16) * 0.1;
+            os << "    " << id << " (" << rtcmDescribe(id) << ") every " << std::setprecision(3)
+               << std::defaultfloat << interval << " s" << (sync ? " [synchronous]" : "") << "\n";
+        }
+    }
+
+    static void rtcmDecodeGloBias(RtcmBits &b, std::ostringstream &os)
+    {
+        static const char *names[] = {"L1 C/A", "L1 P", "L2 C/A", "L2 P"};
+        int sta = b.u(12);
+        bool aligned = b.u(1);
+        b.u(3);
+        int mask = b.u(4);
+        os << "Station " << sta << " GLONASS code-phase biases (" << (aligned ? "aligned" : "not aligned") << "):";
+        os << std::fixed << std::setprecision(2);
+        for (int i = 0; i < 4; ++i)
+            if (mask & (8 >> i))
+                os << " " << names[i] << " " << std::showpos << b.s(16) * 0.02 << std::noshowpos << " m";
+        os << "\n";
+    }
+
+    static void rtcmDecodeMsm(RtcmBits &b, int mt, std::ostringstream &os)
+    {
+        static const char *levels[] = {"", "compact pseudorange", "compact phase", "compact pseudorange+phase",
+                                       "pseudorange+phase+CNR", "pseudorange+phase+CNR+Doppler",
+                                       "high-res pseudorange+phase+CNR", "high-res pseudorange+phase+CNR+Doppler"};
+        const RtcmGnss &gnss = rtcmGnssTable().at(mt / 10);
+        int level = mt % 10;
+        bool glonass = (mt / 10 == 108);
+
+        int sta = b.u(12);
+        std::string epoch;
+        if (glonass)
+        {
+            int dow = b.u(3);
+            int tod = b.u(27);
+            double utc = std::fmod(tod / 1000.0 - 3 * 3600.0 + 86400.0, 86400.0);
+            epoch = rtcmFormatTime(dow * 86400000.0 + tod) + " GLONASS (Moscow) time = " +
+                    rtcmFormatTime(utc * 1000.0, false) + " UTC";
+        }
+        else
+        {
+            epoch = rtcmFormatTime(b.u(30)) + (mt / 10 == 112 ? " BeiDou" : " GPS") + " time of week";
+        }
+        bool multi = b.u(1);
+        b.skip(3 + 7 + 2 + 2 + 1 + 3); // IODS, reserved, clock steering, ext clock, smoothing
+        uint64_t sat_mask = b.u(64);
+        uint32_t sig_mask = b.u(32);
+
+        std::vector<int> sats, sigs;
+        for (int i = 0; i < 64; ++i)
+            if (sat_mask >> (63 - i) & 1)
+                sats.push_back(i + 1);
+        for (int i = 0; i < 32; ++i)
+            if (sig_mask >> (31 - i) & 1)
+                sigs.push_back(i + 1);
+        std::vector<std::vector<bool>> cells(sats.size(), std::vector<bool>(sigs.size()));
+        size_t ncell = 0;
+        for (auto &row : cells)
+            for (size_t j = 0; j < sigs.size(); ++j)
+                ncell += (row[j] = b.u(1));
+
+        // MSM4-7 carry CNR at the end of the signal data; skip the fields before it.
+        std::vector<double> cnr;
+        if (level >= 4)
+        {
+            size_t ns = sats.size();
+            bool ext = (level == 5 || level == 7);
+            bool hires = (level >= 6);
+            b.skip(8 * ns + (ext ? 4 * ns : 0) + 10 * ns + (ext ? 14 * ns : 0));
+            b.skip(ncell * ((hires ? 20 : 15) + (hires ? 24 : 22) + (hires ? 10 : 4) + 1));
+            for (size_t i = 0; i < ncell; ++i)
+                cnr.push_back(hires ? b.u(10) * 0.0625 : b.u(6));
+        }
+
+        auto sigName = [&](int id)
+        {
+            auto it = gnss.signals.find(id);
+            return it != gnss.signals.end() ? std::string(it->second) : "#" + std::to_string(id);
+        };
+
+        os << gnss.name << " observations, MSM" << level << " (" << levels[level] << ") - station " << sta << "\n"
+           << "  Epoch: " << epoch << (multi ? "  (more MSM messages follow for this epoch)" : "") << "\n"
+           << "  " << sats.size() << " satellites, signals:";
+        for (size_t j = 0; j < sigs.size(); ++j)
+            os << (j ? ", " : " ") << sigName(sigs[j]);
+        os << "\n";
+
+        size_t k = 0;
+        for (size_t i = 0; i < sats.size(); ++i)
+        {
+            char prn[8];
+            snprintf(prn, sizeof(prn), "%c%02d", gnss.prefix, sats[i]);
+            os << "    " << prn << ":";
+            bool first = true;
+            for (size_t j = 0; j < sigs.size(); ++j)
+            {
+                if (!cells[i][j])
+                    continue;
+                os << (first ? " " : ", ") << sigName(sigs[j]);
+                if (!cnr.empty())
+                    os << " " << static_cast<int>(std::lround(cnr[k])) << " dB-Hz";
+                ++k;
+                first = false;
+            }
+            os << "\n";
+        }
+    }
+
+    static void rtcmDecodeEphemeris(RtcmBits &b, int mt, std::ostringstream &os)
+    {
+        char buf[96];
+        switch (mt)
+        {
+        case 1019:
+        {
+            int sat = b.u(6), week = b.u(10);
+            snprintf(buf, sizeof(buf), "GPS ephemeris for G%02d (week %d mod 1024)", sat, week);
+            break;
+        }
+        case 1020:
+        {
+            int sat = b.u(6), fcn = static_cast<int>(b.u(5)) - 7;
+            snprintf(buf, sizeof(buf), "GLONASS ephemeris for R%02d (frequency channel %+d)", sat, fcn);
+            break;
+        }
+        case 1042:
+        {
+            int sat = b.u(6), week = b.u(13);
+            snprintf(buf, sizeof(buf), "BeiDou ephemeris for C%02d (BDS week %d)", sat, week);
+            break;
+        }
+        case 1044:
+        {
+            int sat = b.u(4);
+            snprintf(buf, sizeof(buf), "QZSS ephemeris for J%02d", sat);
+            break;
+        }
+        default:
+        {
+            int sat = b.u(6), week = b.u(12);
+            snprintf(buf, sizeof(buf), "Galileo %s ephemeris for E%02d (week %d)", mt == 1045 ? "F/NAV" : "I/NAV", sat, week);
+        }
+        }
+        os << buf << "\n";
+    }
+
+    std::string rtcmToString(const rtcm_msgs::msg::Message &msg)
+    {
+        std::ostringstream os;
+        const std::vector<uint8_t> &data = msg.message;
+
+        char stamp[32];
+        std::time_t sec = msg.header.stamp.sec;
+        std::tm utc;
+        gmtime_r(&sec, &utc);
+        strftime(stamp, sizeof(stamp), "%Y-%m-%d %H:%M:%S", &utc);
+        snprintf(stamp + strlen(stamp), sizeof(stamp) - strlen(stamp), ".%03u UTC", msg.header.stamp.nanosec / 1000000);
+        os << "RTCM message @ " << stamp << " (" << data.size() << " bytes, frame '" << msg.header.frame_id << "')\n";
+
+        size_t i = 0;
+        int frames = 0;
+        while (i + 6 <= data.size())
+        {
+            if (data[i] != 0xD3)
+            {
+                ++i;
+                continue;
+            }
+            size_t len = ((data[i + 1] & 0x03) << 8) | data[i + 2];
+            if (i + 3 + len + 3 > data.size())
+            {
+                os << "!! truncated frame at byte " << i << "\n";
+                break;
+            }
+            const uint8_t *payload = &data[i + 3];
+            uint32_t crc = (data[i + 3 + len] << 16) | (data[i + 4 + len] << 8) | data[i + 5 + len];
+            i += 3 + len + 3;
+            ++frames;
+            if (rtcmCrc24q(&data[i - len - 6], len + 3) != crc)
+            {
+                os << "!! CRC mismatch, frame skipped\n";
+                continue;
+            }
+
+            RtcmBits b(payload, len);
+            std::ostringstream body;
+            int mt = 0;
+            try
+            {
+                mt = b.u(12);
+                if (mt == 1005 || mt == 1006)
+                    rtcmDecodeStation(b, mt, body);
+                else if (mt == 1007 || mt == 1008 || mt == 1033)
+                    rtcmDecodeAntenna(b, mt, body);
+                else if (mt == 1013)
+                    rtcmDecodeSystemParams(b, body);
+                else if (mt == 1230)
+                    rtcmDecodeGloBias(b, body);
+                else if (rtcmIsMsm(mt))
+                    rtcmDecodeMsm(b, mt, body);
+                else if (mt == 1019 || mt == 1020 || mt == 1042 || mt == 1044 || mt == 1045 || mt == 1046)
+                    rtcmDecodeEphemeris(b, mt, body);
+                else
+                    body << rtcmDescribe(mt) << " (not decoded)\n";
+            }
+            catch (const std::exception &e)
+            {
+                body << "!! decode error: " << e.what() << "\n";
+            }
+            os << "[" << mt << "] " << body.str();
+        }
+        if (frames == 0)
+            os << "!! no RTCM3 frame found\n";
+        return os.str();
     }
 
     bool utmToLatLon(double utm_easting, double utm_northing, const std::string &utm_zone,

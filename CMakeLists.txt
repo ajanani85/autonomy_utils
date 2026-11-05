@@ -35,6 +35,7 @@ set(dependencies
         tf2_ros
         visualization_msgs
         GeographicLib
+        rtcm_msgs
       )
 
 # find dependencies
@@ -44,6 +45,10 @@ find_package(ament_cmake_gtest REQUIRED)
 foreach(Dependency IN ITEMS ${dependencies})
   find_package(${Dependency} REQUIRED)
 endforeach()
+
+# PROJ (Debian's libproj-dev 8.x ships no CMake config, only pkg-config)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(PROJ REQUIRED proj)
 
 include_directories(
 	include
@@ -83,11 +88,13 @@ src/autonomy_utils/lib/*.cpp
 add_library(autonomy_utils_lib 
   ${utils_lib_files}
 )
-target_link_libraries(autonomy_utils_lib GeographicLib::GeographicLib)
+target_include_directories(autonomy_utils_lib PRIVATE ${PROJ_INCLUDE_DIRS})
+target_link_libraries(autonomy_utils_lib GeographicLib::GeographicLib ${PROJ_LINK_LIBRARIES})
 ament_target_dependencies(autonomy_utils_lib ${dependencies})
 ament_export_targets(autonomy_utils_libTargets HAS_LIBRARY_TARGET)
 ament_export_include_directories(include)
-ament_export_libraries(autonomy_utils_lib)
+# autonomy_utils_lib is static, so downstream packages must link libproj too
+ament_export_libraries(autonomy_utils_lib ${PROJ_LINK_LIBRARIES})
 
 ###################################KEYBOARD_NODE#####################################
 
