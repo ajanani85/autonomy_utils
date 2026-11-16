@@ -2,7 +2,7 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <pcl_conversions/pcl_conversions.h>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
-#include <cv_bridge/cv_bridge.h>
+#include <cv_bridge/cv_bridge.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <geometry_msgs/msg/point32.hpp>
 #include <autonomy_utils/lib/ros2_core.h>
