@@ -47,7 +47,7 @@ void BagLogger::add_topic(const std::string &topic, const std::string &message_i
   tm.name = topic;
   tm.type = message_in_str;
   tm.serialization_format = rmw_get_serialization_format();
-  tm.offered_qos_profiles = "";
+  tm.offered_qos_profiles = {};
 
   writer_->create_topic(tm);
 }
